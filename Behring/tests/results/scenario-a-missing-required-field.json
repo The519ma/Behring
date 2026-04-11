@@ -1,0 +1,63 @@
+{
+  "ok": false,
+  "overall_status": "Error",
+  "processing_ok": false,
+  "destination_update_ok": false,
+  "destination_update_status": "Skipped - Missing Config",
+  "destination_update_missing_config": [
+    "BASEROW_BASE_URL",
+    "BASEROW_TOKEN",
+    "BASEROW_TABLE_ID"
+  ],
+  "sourceAdapter": "baserow_prototype",
+  "sourceRecordId": 1,
+  "normalizedCase": {
+    "case_id": "LAB-001",
+    "patient_age_or_age_sex": "Age / Sex",
+    "referrer": "Referring clinician",
+    "specimen_type": "",
+    "specimen_site": "Specimen site here",
+    "orientation": "Orientation if provided",
+    "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+    "status": "New"
+  },
+  "normalizedWorkflowResult": {
+    "workflow_status": "Error",
+    "draft_payload": null,
+    "error_message": "Missing required normalized field(s): specimen_type",
+    "processed_at": "2026-04-04T13:23:27.354Z"
+  },
+  "destinationUpdate": {
+    "status": "Error",
+    "draft report": "",
+    "error message": "Missing required normalized field(s): specimen_type",
+    "last processed at": "2026-04-04T13:23:27.354Z"
+  },
+  "sourceStatusCode": 200,
+  "sourceResponse": {
+    "id": 1,
+    "internal lab id": "LAB-001",
+    "created on": "2026-04-04T10:00:00Z",
+    "referrer": "Referring clinician",
+    "specimen site": "Specimen site here",
+    "orientation": "Orientation if provided",
+    "age": "Age / Sex",
+    "folder URL": "",
+    "QR URL": "",
+    "Barcode value": "BARCODE-001",
+    "Brief clinical background": "Insert relevant clinical history and provisional diagnosis if available.",
+    "status": "New"
+  },
+  "processingSummary": {
+    "ok": false,
+    "sourceRecordId": 1,
+    "sourceAdapter": "baserow_prototype",
+    "previousStatus": "New",
+    "status": "Error",
+    "error": "Missing required normalized field(s): specimen_type",
+    "missingFields": [
+      "specimen_type"
+    ]
+  },
+  "destination_update_error": "Missing runtime configuration for Baserow destination update."
+}

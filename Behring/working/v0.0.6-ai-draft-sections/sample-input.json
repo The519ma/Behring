@@ -1,0 +1,15 @@
+{
+  "id": 1,
+  "internal lab id": "LAB-001",
+  "created on": "2026-04-04T10:00:00Z",
+  "referrer": "Referring clinician",
+  "specimen type": "Specimen type here",
+  "specimen site": "Specimen site here",
+  "orientation": "Orientation if provided",
+  "age": "Age / Sex",
+  "folder URL": "",
+  "QR URL": "",
+  "Barcode value": "BARCODE-001",
+  "Brief clinical background": "Insert relevant clinical history and provisional diagnosis if available.",
+  "status": "New"
+}

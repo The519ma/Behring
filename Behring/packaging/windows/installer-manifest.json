@@ -1,0 +1,37 @@
+{
+  "installer_name": "Behring Setup",
+  "target_platform": "windows",
+  "active_baseline": "baseline/v0.0.6-ai-ready",
+  "project_root_name": "Behring",
+  "runtime_defaults": {
+    "node_red_port": 1880,
+    "baserow_base_url": "http://localhost:8080",
+    "source_adapter": "baserow_prototype",
+    "openai_model": "gpt-4.1-mini"
+  },
+  "required_env_vars": [
+    "SOURCE_ADAPTER",
+    "BASEROW_BASE_URL",
+    "BASEROW_TOKEN",
+    "BASEROW_TABLE_ID"
+  ],
+  "optional_env_vars": [
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL",
+    "OPENELIS_BASE_URL",
+    "OPENELIS_API_TOKEN"
+  ],
+  "planned_setup_steps": [
+    "verify nodejs",
+    "install npm dependencies",
+    "create local runtime directory",
+    "copy active baseline files",
+    "prepare local environment file",
+    "prepare node-red user directory",
+    "create launch helper"
+  ],
+  "notes": [
+    "This manifest is not the final installer format.",
+    "It exists so packaging behavior can evolve in-source before a real exe wrapper is chosen."
+  ]
+}

@@ -1,0 +1,461 @@
+[
+    {
+        "id": "ab45109def0cb17f",
+        "type": "tab",
+        "label": "Reporting Middleware v1",
+        "disabled": false,
+        "info": "Portable middleware prototype with a Baserow adapter and source-agnostic core logic."
+    },
+    {
+        "id": "99f45fb385dae4d3",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Architecture",
+        "info": "1. Entry points\n2. Live Baserow adapter path\n3. Shared normalized validation and draft logic\n4. Live Baserow update adapter\n\nAfter normalization, the flow uses only internal normalized fields.",
+        "x": 150,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "86ee69422a9aac93",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Configuration",
+        "info": "Required env vars for the live Baserow adapter path:\nSOURCE_ADAPTER=baserow_prototype\nBASEROW_BASE_URL\nBASEROW_TOKEN\nBASEROW_TABLE_ID\n\nBASEROW_TABLE_ID is fixed per prototype table.\nBaserow row id is dynamic and comes from the current source record.\nThe sample-input path does not need live Baserow config.\n\nOptional future env vars:\nOPENELIS_BASE_URL\nOPENELIS_API_TOKEN\nOPENAI_API_KEY",
+        "x": 160,
+        "y": 90,
+        "wires": []
+    },
+    {
+        "id": "5e75b2a0bd062518",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Runtime Config Check",
+        "info": "Use this path to verify runtime wiring without exposing the Baserow token.\nIt reports whether BASEROW_BASE_URL, BASEROW_TOKEN, and BASEROW_TABLE_ID are present, plus the SOURCE_ADAPTER value.",
+        "x": 170,
+        "y": 130,
+        "wires": []
+    },
+    {
+        "id": "9c48c9c58c744af9",
+        "type": "inject",
+        "z": "ab45109def0cb17f",
+        "name": "Sample input",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"id\":1,\"Internal Lab ID\":\"LAB-001\",\"Patient identifier\":\"MRN-1001\",\"Patient name\":\"Jane Doe\",\"created on\":\"2026-04-10T10:00:00Z\",\"Accessioned at\":\"2026-04-10T10:15:00Z\",\"Referrer\":\"Dr Referrer\",\"Program\":\"Histopathology\",\"Specimen type\":\"Cervical biopsy\",\"Specimen site\":\"Cervix\",\"Orientation\":\"\",\"Age\":\"54 / Female\",\"Brief Clinical Background\":\"Postmenopausal bleeding. Rule out malignancy.\",\"Status\":\"Accepted\",\"Referral attachment URLs\":[\"https://local.intake/referrals/REF-001.pdf\"],\"Gross processing method\":\"wax/paraffin block processing\",\"Gross processing notes\":\"Grossing completed. Block setting in progress. Impression cytology may be required if delay persists.\",\"Post-review requests\":[\"IHC: p16\",\"Repeat stain: deeper section\"],\"OpenELIS case id\":\"OE-0001\",\"Grossing owner\":\"Senior Tech A\",\"Reporting owner\":\"Dr Pathologist\",\"Block ID\":\"B1\",\"Slide ID\":\"S1\",\"Slide barcode\":\"SLIDE-LAB-001-S1\",\"Report barcode\":\"REPORT-LAB-001\",\"Lab record barcode\":\"LABREC-LAB-001\",\"Draft report text\":\"Initial morphology pending pathologist review.\",\"Report review status\":\"finalized_pending\",\"Microscope image URLs\":[\"camera-upload/pap-001.jpg\",\"camera-upload/pap-002.jpg\"]}",
+        "payloadType": "json",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "b414ba06337de52a"
+            ]
+        ]
+    },
+    {
+        "id": "2b60208bd51cb88f",
+        "type": "inject",
+        "z": "ab45109def0cb17f",
+        "name": "Check runtime config",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 260,
+        "wires": [
+            [
+                "4a55180326d8d129"
+            ]
+        ]
+    },
+    {
+        "id": "114a69987db3a468",
+        "type": "http in",
+        "z": "ab45109def0cb17f",
+        "name": "GET /reporting/config-check",
+        "url": "/reporting/config-check",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "4a55180326d8d129"
+            ]
+        ]
+    },
+    {
+        "id": "4a55180326d8d129",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Build config-check report",
+        "func": "function hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nvar sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar report = {\n    ok: true,\n    node_red_env: env.get(\"NODE_RED_ENV\") || null,\n    source_adapter: sourceAdapter,\n    baserow_base_url_present: hasValue(baseUrl),\n    baserow_table_id_present: hasValue(tableId),\n    baserow_token_present: hasValue(token),\n    missing_config: []\n};\n\nif (!report.baserow_base_url_present) { report.missing_config.push(\"BASEROW_BASE_URL\"); }\nif (!report.baserow_table_id_present) { report.missing_config.push(\"BASEROW_TABLE_ID\"); }\nif (!report.baserow_token_present) { report.missing_config.push(\"BASEROW_TOKEN\"); }\nif (sourceAdapter !== \"baserow_prototype\") { report.ok = false; }\nif (report.missing_config.length > 0) { report.ok = false; }\n\nmsg.statusCode = report.ok ? 200 : 200;\nmsg.payload = report;\nif (msg.res) {\n    return [msg, null];\n}\nreturn [null, msg];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 280,
+        "wires": [
+            [
+                "378f6a6a8cb8a0d3"
+            ],
+            [
+                "b45ac35a231f734b"
+            ]
+        ]
+    },
+    {
+        "id": "b414ba06337de52a",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Prepare direct source record",
+        "func": "// Accept a direct prototype row and hand it to the shared pipeline.\nvar sourceRecord = null;\n\nif (msg.payload && typeof msg.payload === \"object\") {\n    if (msg.payload.row && typeof msg.payload.row === \"object\") {\n        sourceRecord = msg.payload.row;\n    } else if (Array.isArray(msg.payload.results) && msg.payload.results.length === 1) {\n        sourceRecord = msg.payload.results[0];\n    } else {\n        sourceRecord = msg.payload;\n    }\n}\n\nif (!sourceRecord || typeof sourceRecord !== \"object\" || Array.isArray(sourceRecord)) {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"Expected a prototype source record in msg.payload, msg.payload.row, or a single-item msg.payload.results array.\"\n    };\n    return [null, msg];\n}\n\nmsg.sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nmsg.sourceRecord = sourceRecord;\nmsg.sourceRecordId = sourceRecord.id || null;\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 160,
+        "wires": [
+            [
+                "d7e515817756f818"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "c6f3cc7a969f42dd",
+        "type": "http in",
+        "z": "ab45109def0cb17f",
+        "name": "POST /reporting/process-row",
+        "url": "/reporting/process-row",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 360,
+        "wires": [
+            [
+                "b414ba06337de52a"
+            ]
+        ]
+    },
+    {
+        "id": "5626310f1912283c",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Live Baserow Source Adapter",
+        "info": "Baserow-specific source adapter.\nThis path reads a real Baserow row by id and passes it into the normalized middleware pipeline.\nBASEROW_TABLE_ID comes from environment configuration.\nThe Baserow row id is provided at runtime for the read path and then carried forward from the source record.\nReplace this section later with an OpenELIS source adapter.",
+        "x": 160,
+        "y": 430,
+        "wires": []
+    },
+    {
+        "id": "adc470dabad4ec3b",
+        "type": "http in",
+        "z": "ab45109def0cb17f",
+        "name": "POST /reporting/process-baserow-row-by-id",
+        "url": "/reporting/process-baserow-row-by-id",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 480,
+        "wires": [
+            [
+                "fa016d6219edb531"
+            ]
+        ]
+    },
+    {
+        "id": "fa016d6219edb531",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Baserow adapter: build GET",
+        "func": "var configuredAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar rowId = msg.sourceRecordId || msg.rowId || (msg.payload && msg.payload.rowId) || (msg.req && msg.req.query && msg.req.query.rowId);\nvar missingVars = [];\n\nif (configuredAdapter !== \"baserow_prototype\") {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"This prototype flow only implements SOURCE_ADAPTER=baserow_prototype. Current value: \" + configuredAdapter\n    };\n    return [null, msg];\n}\n\nif (!baseUrl) { missingVars.push(\"BASEROW_BASE_URL\"); }\nif (!token) { missingVars.push(\"BASEROW_TOKEN\"); }\nif (!tableId) { missingVars.push(\"BASEROW_TABLE_ID\"); }\n\nif (missingVars.length > 0) {\n    msg.statusCode = 500;\n    msg.payload = {\n        ok: false,\n        error: \"Missing runtime configuration for the live Baserow read path.\",\n        missing_config: missingVars,\n        hint: \"Set BASEROW_BASE_URL, BASEROW_TOKEN, and BASEROW_TABLE_ID in the Node-RED runtime environment. The sample-input path does not require these values.\"\n    };\n    return [null, msg];\n}\n\nif (!rowId) {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"No rowId provided. Example: { \\\"rowId\\\": 1001 }. BASEROW_TABLE_ID identifies the table, while rowId identifies the specific record inside that table.\"\n    };\n    return [null, msg];\n}\n\nmsg.sourceAdapter = configuredAdapter;\nmsg.sourceRecordId = Number(rowId);\nmsg.method = \"GET\";\nmsg.url = baseUrl.replace(/\\/$/, \"\") + \"/api/database/rows/table/\" + tableId + \"/\" + msg.sourceRecordId + \"/?user_field_names=true\";\nmsg.headers = {\n    \"Authorization\": \"Token \" + token,\n    \"Accept\": \"application/json\"\n};\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 480,
+        "wires": [
+            [
+                "60ccc5abee81bb07"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "60ccc5abee81bb07",
+        "type": "http request",
+        "z": "ab45109def0cb17f",
+        "name": "GET Baserow row",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 680,
+        "y": 480,
+        "wires": [
+            [
+                "4f913bbf6761e091"
+            ]
+        ]
+    },
+    {
+        "id": "4f913bbf6761e091",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Baserow adapter: handle GET",
+        "func": "if (typeof msg.statusCode === \"number\" && msg.statusCode >= 400) {\n    msg.payload = {\n        ok: false,\n        error: \"Failed to fetch source record \" + msg.sourceRecordId + \" from Baserow.\",\n        sourceAdapter: msg.sourceAdapter,\n        source_read_http_status_code: msg.statusCode,\n        source_read_response: msg.payload\n    };\n    return [null, msg];\n}\n\nvar sourceRecord = null;\nif (msg.payload && typeof msg.payload === \"object\") {\n    if (msg.payload.id) {\n        sourceRecord = msg.payload;\n    } else if (msg.payload.row && typeof msg.payload.row === \"object\" && msg.payload.row.id) {\n        sourceRecord = msg.payload.row;\n    } else if (Array.isArray(msg.payload.results) && msg.payload.results.length === 1 && msg.payload.results[0] && msg.payload.results[0].id) {\n        sourceRecord = msg.payload.results[0];\n    }\n}\n\nif (!sourceRecord) {\n    msg.statusCode = 502;\n    msg.payload = {\n        ok: false,\n        error: \"Prototype source adapter received an unexpected Baserow payload shape. Expected a row object with an id.\",\n        sourceAdapter: msg.sourceAdapter,\n        source_read_response: msg.payload\n    };\n    return [null, msg];\n}\n\nmsg.sourceRecord = sourceRecord;\nmsg.sourceRecordId = sourceRecord.id;\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 480,
+        "wires": [
+            [
+                "d7e515817756f818"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "0b786314b3b152c7",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Shared Core Logic",
+        "info": "These nodes are the reusable core for a later OpenELIS adapter swap.\nThey should not depend on Baserow field names.",
+        "x": 150,
+        "y": 570,
+        "wires": []
+    },
+    {
+        "id": "d7e515817756f818",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Normalize row",
+        "func": "// Baserow-specific source mapping is isolated here.\n// Replace this node with an OpenELIS mapping adapter later.\nvar sourceRecord = msg.sourceRecord;\nvar sourceRecordId = (sourceRecord && sourceRecord.id) ? sourceRecord.id : (msg.sourceRecordId || null);\nvar portalBaseUrl = env.get(\"BEHRING_PORTAL_BASE_URL\") || \"https://behring.local\";\n\nfunction normalizePrimitiveValue(value) {\n    if (value === undefined || value === null) {\n        return \"\";\n    }\n    if (Array.isArray(value)) {\n        return value.map(normalizePrimitiveValue).filter(Boolean).join(\", \");\n    }\n    if (typeof value === \"object\") {\n        if (Object.prototype.hasOwnProperty.call(value, \"value\")) {\n            return normalizePrimitiveValue(value.value);\n        }\n        if (Object.prototype.hasOwnProperty.call(value, \"name\")) {\n            return normalizePrimitiveValue(value.name);\n        }\n        return \"\";\n    }\n    return String(value).trim();\n}\n\nfunction normalizeListValue(value) {\n    if (value === undefined || value === null || value === \"\") {\n        return [];\n    }\n    if (Array.isArray(value)) {\n        return value.map(normalizePrimitiveValue).filter(Boolean);\n    }\n    if (typeof value === \"object\") {\n        if (Object.prototype.hasOwnProperty.call(value, \"value\")) {\n            return normalizeListValue(value.value);\n        }\n        return [];\n    }\n    return String(value)\n        .split(/\\r?\\n|;|\\|/)\n        .map(function(item) { return item.trim(); })\n        .filter(Boolean);\n}\n\nfunction getField(record, candidates, listMode) {\n    var i;\n    for (i = 0; i < candidates.length; i += 1) {\n        if (Object.prototype.hasOwnProperty.call(record, candidates[i])) {\n            return {\n                key: candidates[i],\n                value: listMode ? normalizeListValue(record[candidates[i]]) : normalizePrimitiveValue(record[candidates[i]])\n            };\n        }\n    }\n    return {\n        key: candidates[0],\n        value: listMode ? [] : \"\"\n    };\n}\n\nfunction inferRequestCategory(requestedTest) {\n    var normalized = String(requestedTest || \"\").toLowerCase();\n    if (normalized.indexOf(\"ihc\") === 0 || normalized.indexOf(\"marker\") === 0) {\n        return \"ihc_marker\";\n    }\n    if (normalized.indexOf(\"repeat\") === 0 && normalized.indexOf(\"section\") !== -1) {\n        return \"repeat_section_recut\";\n    }\n    if (normalized.indexOf(\"recut\") !== -1 || normalized.indexOf(\"deeper section\") !== -1) {\n        return \"repeat_section_recut\";\n    }\n    if (normalized.indexOf(\"repeat\") === 0) {\n        return \"repeat_stain\";\n    }\n    if (normalized.indexOf(\"special stain\") === 0) {\n        return \"special_stain\";\n    }\n    if (normalized.indexOf(\"impression cytology\") !== -1) {\n        return \"special_stain\";\n    }\n    return \"routine_stain\";\n}\n\nfunction buildRequestObjects(items, requestSource, requestedByRole, requestedAt) {\n    return items.map(function(item, index) {\n        return {\n            request_id: requestSource.toUpperCase() + \"-REQ-\" + (index + 1),\n            request_source: requestSource,\n            category: inferRequestCategory(item),\n            requested_test: item,\n            requested_by_role: requestedByRole,\n            requested_by_user: \"\",\n            requested_at: requestedAt || \"\",\n            reason: \"Requested after review\",\n            status: \"requested\"\n        };\n    });\n}\n\nfunction resolveDateContext(preferredValue, fallbackValue) {\n    var parsed = new Date(preferredValue || fallbackValue || Date.now());\n    if (Number.isNaN(parsed.getTime())) {\n        parsed = new Date();\n    }\n    return {\n        year: String(parsed.getUTCFullYear()),\n        stamp: parsed.toISOString().slice(0, 10).replace(/-/g, \"\")\n    };\n}\n\nfunction buildTempSuffix(fallbackDateValue, rowId) {\n    var dateContext = resolveDateContext(\"\", fallbackDateValue);\n    var seed = String(rowId || dateContext.stamp.slice(-5)).replace(/\\D/g, \"\");\n    if (!seed) {\n        seed = dateContext.stamp.slice(-5);\n    }\n    return \"TEMP-\" + seed.padStart(5, \"0\").slice(-5);\n}\n\nfunction buildPersonScaffoldSuffix(dateOfBirth, gender, firstName, fallbackDateValue, rowId) {\n    var dateContext = resolveDateContext(dateOfBirth, fallbackDateValue);\n    var genderInitial = normalizePrimitiveValue(gender).replace(/[^A-Za-z]/g, \"\").toUpperCase().slice(0, 1);\n    var firstNameStem = normalizePrimitiveValue(firstName).replace(/[^A-Za-z]/g, \"\").toUpperCase().slice(0, 4);\n    if (!normalizePrimitiveValue(dateOfBirth) || !genderInitial || !firstNameStem) {\n        return buildTempSuffix(fallbackDateValue, rowId);\n    }\n    return dateContext.year + \"-\" + genderInitial + firstNameStem;\n}\n\nfunction buildScaffoldId(prefix, suffix) {\n    return prefix + \"-\" + suffix;\n}\n\nif (!sourceRecord || typeof sourceRecord !== \"object\") {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"No source record is available for normalization.\"\n    };\n    return [null, msg];\n}\n\nvar fieldMap = {\n    case_id: getField(sourceRecord, [\"Internal Lab ID\", \"internal lab id\"]),\n    patient_age_or_age_sex: getField(sourceRecord, [\"Age\", \"age\"]),\n    referrer: getField(sourceRecord, [\"Referrer\", \"referrer\"]),\n    program: getField(sourceRecord, [\"Program\", \"program\"]),\n    specimen_type: getField(sourceRecord, [\"Specimen type\", \"specimen type\"]),\n    specimen_site: getField(sourceRecord, [\"Specimen site\", \"specimen site\"]),\n    orientation: getField(sourceRecord, [\"Orientation\", \"orientation\"]),\n    clinical_background: getField(sourceRecord, [\"Brief Clinical Background\", \"Brief clinical background\"]),\n    status: getField(sourceRecord, [\"Status\", \"status\"]),\n    patient_identifier: getField(sourceRecord, [\"Patient identifier\", \"patient identifier\"]),\n    patient_name: getField(sourceRecord, [\"Patient name\", \"patient name\"]),\n    first_name: getField(sourceRecord, [\"First Name\", \"First name\", \"first name\"]),\n    gender: getField(sourceRecord, [\"Gender\", \"gender\"]),\n    date_of_birth: getField(sourceRecord, [\"Date of Birth\", \"Date Of Birth\", \"date of birth\"]),\n    identifier_suffix: getField(sourceRecord, [\"Identifier suffix\", \"Identifier Suffix\", \"identifier suffix\"]),\n    referral_attachment_urls: getField(sourceRecord, [\"Referral attachment URLs\", \"referral attachment urls\"], true),\n    gross_processing_method: getField(sourceRecord, [\"Gross processing method\", \"gross processing method\"]),\n    gross_processing_notes: getField(sourceRecord, [\"Gross processing notes\", \"gross processing notes\"]),\n    post_review_requests: getField(sourceRecord, [\"Post-review requests\", \"Additional tests\", \"additional tests\"], true),\n    openelis_case_id: getField(sourceRecord, [\"OpenELIS case id\", \"openelis case id\"]),\n    accessioned_at: getField(sourceRecord, [\"Accessioned at\", \"accessioned at\", \"created on\"]),\n    grossing_owner: getField(sourceRecord, [\"Grossing owner\", \"grossing owner\"]),\n    reporting_owner: getField(sourceRecord, [\"Reporting owner\", \"reporting owner\"]),\n    block_id: getField(sourceRecord, [\"Block ID\", \"block id\"]),\n    slide_id: getField(sourceRecord, [\"Slide ID\", \"slide id\"]),\n    slide_barcode: getField(sourceRecord, [\"Slide barcode\", \"slide barcode\", \"Barcode value\", \"barcode value\"]),\n    report_barcode: getField(sourceRecord, [\"Report barcode\", \"report barcode\"]),\n    lab_record_barcode: getField(sourceRecord, [\"Lab record barcode\", \"lab record barcode\"]),\n    draft_report_text: getField(sourceRecord, [\"Draft report text\", \"draft report text\", \"Draft report\", \"draft report\"]),\n    report_review_status: getField(sourceRecord, [\"Report review status\", \"report review status\"]),\n    microscope_image_urls: getField(sourceRecord, [\"Microscope image URLs\", \"microscope image urls\"], true)\n};\n\nvar requestedAt = fieldMap.accessioned_at.value || \"\";\nvar createdOn = normalizePrimitiveValue(sourceRecord[\"created on\"]);\nvar derivedFirstName = fieldMap.first_name.value || fieldMap.patient_name.value.split(/\\s+/)[0] || \"\";\nvar scaffoldSuffix = fieldMap.identifier_suffix.value || buildPersonScaffoldSuffix(fieldMap.date_of_birth.value, fieldMap.gender.value, derivedFirstName, createdOn, sourceRecordId);\nvar accessionId = fieldMap.case_id.value || buildScaffoldId(\"LAB\", scaffoldSuffix);\nvar patientIdentifier = fieldMap.patient_identifier.value || buildScaffoldId(\"PAT\", scaffoldSuffix);\nvar slideBarcode = fieldMap.slide_barcode.value || (accessionId ? \"SLIDE-\" + accessionId : \"\");\nvar reportBarcode = fieldMap.report_barcode.value || (accessionId ? \"REPORT-\" + accessionId : \"\");\nvar labRecordBarcode = fieldMap.lab_record_barcode.value || (accessionId ? \"LABREC-\" + accessionId : \"\");\nvar program = fieldMap.program.value || \"Histopathology\";\nvar defaultSampleType = program === \"Cytology\" ? \"Cytology specimen\" : (program === \"Immunohistochemistry\" ? \"Immunohistochemistry specimen\" : \"Histopathology specimen\");\nvar postReviewRequests = buildRequestObjects(fieldMap.post_review_requests.value, \"post_review\", \"senior_tech_or_pathologist\", requestedAt);\nvar imageAssets = fieldMap.microscope_image_urls.value.map(function(item, index) {\n    var imageId = accessionId + \"-IMG-\" + (index + 1);\n    var portalToken = accessionId + \"-token-\" + (index + 1);\n    return {\n        image_id: imageId,\n        image_type: \"microscope_capture\",\n        uploaded_by: \"\",\n        uploaded_at: requestedAt,\n        storage_key: item,\n        portal_token: portalToken,\n        portal_url: portalBaseUrl.replace(/\\/$/, \"\") + \"/portal/cases/\" + encodeURIComponent(accessionId) + \"/images/\" + encodeURIComponent(imageId) + \"?token=\" + encodeURIComponent(portalToken),\n        qr_target_url: portalBaseUrl.replace(/\\/$/, \"\") + \"/portal/cases/\" + encodeURIComponent(accessionId) + \"?token=\" + encodeURIComponent(portalToken)\n    };\n});\n\nmsg.sourceRecordId = sourceRecordId;\nmsg.normalizedCase = {\n    case_id: accessionId || \"\",\n    patient_age_or_age_sex: fieldMap.patient_age_or_age_sex.value || \"\",\n    referrer: fieldMap.referrer.value || \"\",\n    specimen_type: fieldMap.specimen_type.value || \"\",\n    specimen_site: fieldMap.specimen_site.value || \"\",\n    orientation: fieldMap.orientation.value || \"\",\n    clinical_background: fieldMap.clinical_background.value || \"\",\n    status: fieldMap.status.value || \"\",\n    pathology_workflow: {\n        referral: {\n            referral_id: sourceRecordId,\n            intake_status: fieldMap.status.value || \"\",\n            patient_identifier: patientIdentifier,\n            patient_name: fieldMap.patient_name.value || \"\",\n            referrer: fieldMap.referrer.value || \"\",\n            specimen_description: [fieldMap.specimen_type.value, fieldMap.specimen_site.value].filter(Boolean).join(\" / \"),\n            clinical_background: fieldMap.clinical_background.value || \"\",\n            attachment_urls: fieldMap.referral_attachment_urls.value,\n            originally_requested_tests: []\n        },\n        case: {\n            accession_id: accessionId,\n            openelis_case_id: fieldMap.openelis_case_id.value || \"\",\n            program: program,\n            default_sample_type: defaultSampleType,\n            workflow_state: fieldMap.status.value || \"\",\n            grossing_owner: fieldMap.grossing_owner.value || \"\",\n            reporting_owner: fieldMap.reporting_owner.value || \"\",\n            accessioned_at: fieldMap.accessioned_at.value || \"\"\n        },\n        processing_decision: {\n            primary_method: fieldMap.gross_processing_method.value || \"\",\n            notes: fieldMap.gross_processing_notes.value || \"\",\n            selected_at: fieldMap.accessioned_at.value || \"\",\n            selected_by: fieldMap.grossing_owner.value || \"\"\n        },\n        test_requests: postReviewRequests,\n        artifacts: {\n            block_id: fieldMap.block_id.value || \"\",\n            slide_id: fieldMap.slide_id.value || \"\",\n            slide_barcode: slideBarcode,\n            report_barcode: reportBarcode,\n            lab_record_barcode: labRecordBarcode,\n            label_reprint_required: postReviewRequests.length > 0\n        },\n        report: {\n            draft_text: fieldMap.draft_report_text.value || \"\",\n            status: fieldMap.report_review_status.value || \"draft\",\n            finalized_at: fieldMap.report_review_status.value === \"finalized_pending\" ? (fieldMap.accessioned_at.value || \"\") : \"\",\n            countersigned_at: fieldMap.report_review_status.value === \"countersigned\" ? (fieldMap.accessioned_at.value || \"\") : \"\",\n            countersigned_by: \"\"\n        },\n        image_assets: imageAssets\n    }\n};\n\nmsg.normalizationMetadata = {\n    schema_version: \"reporting-middleware-v1-pathology\",\n    source_adapter: msg.sourceAdapter || \"baserow_prototype\",\n    source_record_id: sourceRecordId,\n    generated_identifiers: {\n        internal_lab_id: !fieldMap.case_id.value,\n        patient_identifier: !fieldMap.patient_identifier.value,\n        scaffold_suffix: scaffoldSuffix,\n        used_temp_suffix: scaffoldSuffix.indexOf(\"TEMP-\") === 0\n    },\n    mapped_from: {\n        case_id: fieldMap.case_id.key,\n        patient_age_or_age_sex: fieldMap.patient_age_or_age_sex.key,\n        referrer: fieldMap.referrer.key,\n        program: fieldMap.program.key,\n        specimen_type: fieldMap.specimen_type.key,\n        specimen_site: fieldMap.specimen_site.key,\n        orientation: fieldMap.orientation.key,\n        clinical_background: fieldMap.clinical_background.key,\n        status: fieldMap.status.key,\n        patient_identifier: fieldMap.patient_identifier.key,\n        patient_name: fieldMap.patient_name.key,\n        first_name: fieldMap.first_name.key,\n        gender: fieldMap.gender.key,\n        date_of_birth: fieldMap.date_of_birth.key,\n        identifier_suffix: fieldMap.identifier_suffix.key,\n        referral_attachment_urls: fieldMap.referral_attachment_urls.key,\n        gross_processing_method: fieldMap.gross_processing_method.key,\n        gross_processing_notes: fieldMap.gross_processing_notes.key,\n        post_review_requests: fieldMap.post_review_requests.key,\n        openelis_case_id: fieldMap.openelis_case_id.key,\n        accessioned_at: fieldMap.accessioned_at.key,\n        grossing_owner: fieldMap.grossing_owner.key,\n        reporting_owner: fieldMap.reporting_owner.key,\n        block_id: fieldMap.block_id.key,\n        slide_id: fieldMap.slide_id.key,\n        slide_barcode: fieldMap.slide_barcode.key,\n        report_barcode: fieldMap.report_barcode.key,\n        lab_record_barcode: fieldMap.lab_record_barcode.key,\n        draft_report_text: fieldMap.draft_report_text.key,\n        report_review_status: fieldMap.report_review_status.key,\n        microscope_image_urls: fieldMap.microscope_image_urls.key\n    }\n};\n\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 620,
+        "wires": [
+            [
+                "456d92310a5ae6e4"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "456d92310a5ae6e4",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Validate normalized case",
+        "func": "var normalizedCase = msg.normalizedCase;\nvar sourceRecordId = msg.sourceRecordId || null;\n\nif (!normalizedCase || typeof normalizedCase !== \"object\") {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"No normalized case is available for validation.\"\n    };\n    return [null, null, msg];\n}\n\nvar currentStatus = normalizedCase.status === undefined || normalizedCase.status === null ? \"\" : String(normalizedCase.status).trim();\nif (currentStatus === \"Finalized\") {\n    msg.statusCode = 409;\n    msg.payload = {\n        ok: false,\n        sourceRecordId: sourceRecordId,\n        status: currentStatus,\n        error: \"Source record \" + sourceRecordId + \" is marked \" + currentStatus + \" and will not be overwritten by the draft workflow.\"\n    };\n    return [null, null, msg];\n}\n\nvar requiredFields = [\n    \"case_id\",\n    \"patient_age_or_age_sex\",\n    \"specimen_type\",\n    \"specimen_site\",\n    \"clinical_background\"\n];\n\nfunction hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nvar missingFields = requiredFields.filter(function(fieldName) {\n    return !hasValue(normalizedCase[fieldName]);\n});\n\nmsg.processedAt = new Date().toISOString();\nmsg.currentStatus = currentStatus || null;\n\nif (missingFields.length > 0) {\n    var errorMessage = \"Missing required normalized field(s): \" + missingFields.join(\", \");\n    msg.processingSummary = {\n        ok: false,\n        sourceRecordId: sourceRecordId,\n        sourceAdapter: msg.sourceAdapter,\n        previousStatus: msg.currentStatus,\n        status: \"Error\",\n        error: errorMessage,\n        missingFields: missingFields\n    };\n    msg.normalizedWorkflowResult = {\n        workflow_status: \"Error\",\n        draft_payload: null,\n        error_message: errorMessage,\n        processed_at: msg.processedAt\n    };\n    return [null, msg, null];\n}\n\nreturn [msg, null, null];",
+        "outputs": 3,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 620,
+        "wires": [
+            [
+                "9a2f7fccbdedc0d5"
+            ],
+            [
+                "85724bf1476cbe8a"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "9a2f7fccbdedc0d5",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Build draft payload",
+        "func": "var normalizedCase = msg.normalizedCase;\nvar processedAt = msg.processedAt || new Date().toISOString();\nvar portalBaseUrl = env.get(\"BEHRING_PORTAL_BASE_URL\") || \"https://behring.local\";\nvar pathologyWorkflow = (normalizedCase && normalizedCase.pathology_workflow) ? normalizedCase.pathology_workflow : {\n    referral: {},\n    case: {},\n    processing_decision: {},\n    test_requests: [],\n    artifacts: {},\n    report: {},\n    image_assets: []\n};\n\nfunction buildLabelPayloads() {\n    var accessionId = pathologyWorkflow.case.accession_id || normalizedCase.case_id || \"\";\n    var slideId = pathologyWorkflow.artifacts.slide_id || \"\";\n    var blockId = pathologyWorkflow.artifacts.block_id || \"\";\n    var stainPlaceholder = pathologyWorkflow.test_requests.length > 0 ? pathologyWorkflow.test_requests[0].requested_test : \"Pending pathologist test selection\";\n    var slideBarcode = pathologyWorkflow.artifacts.slide_barcode || (accessionId ? \"SLIDE-\" + accessionId : \"\");\n    var reportBarcode = pathologyWorkflow.artifacts.report_barcode || (accessionId ? \"REPORT-\" + accessionId : \"\");\n    var labRecordBarcode = pathologyWorkflow.artifacts.lab_record_barcode || (accessionId ? \"LABREC-\" + accessionId : \"\");\n    return {\n        slide_label: {\n            accession_case_id: accessionId,\n            patient_identifier: pathologyWorkflow.referral.patient_identifier || \"\",\n            block_or_slide_id: [blockId, slideId].filter(Boolean).join(\" / \"),\n            stain_display: stainPlaceholder,\n            barcode_value: slideBarcode,\n            barcode_resolution_url: portalBaseUrl.replace(/\\/$/, \"\") + \"/resolve/barcode/\" + encodeURIComponent(slideBarcode)\n        },\n        report_label: {\n            accession_case_id: accessionId,\n            patient_identifier: pathologyWorkflow.referral.patient_identifier || \"\",\n            specimen_site: normalizedCase.specimen_site || \"\",\n            clinical_reference: normalizedCase.clinical_background || \"\",\n            barcode_value: reportBarcode,\n            barcode_resolution_url: portalBaseUrl.replace(/\\/$/, \"\") + \"/resolve/barcode/\" + encodeURIComponent(reportBarcode)\n        },\n        lab_record_label: {\n            accession_case_id: accessionId,\n            specimen_type: normalizedCase.specimen_type || \"\",\n            specimen_site: normalizedCase.specimen_site || \"\",\n            accessioned_at: pathologyWorkflow.case.accessioned_at || processedAt,\n            barcode_value: labRecordBarcode,\n            barcode_resolution_url: portalBaseUrl.replace(/\\/$/, \"\") + \"/resolve/barcode/\" + encodeURIComponent(labRecordBarcode)\n        }\n    };\n}\n\nvar labelPayloads = buildLabelPayloads();\nvar workflowGaps = [];\nif (!pathologyWorkflow.processing_decision.primary_method) {\n    workflowGaps.push(\"Gross processing method has not been selected yet.\");\n}\nif (!pathologyWorkflow.case.openelis_case_id) {\n    workflowGaps.push(\"OpenELIS case id has not been recorded yet.\");\n}\nif (!pathologyWorkflow.report.status) {\n    workflowGaps.push(\"Report status is missing.\");\n}\n\nvar draftPayload = {\n    schema_version: \"reporting-middleware-v1-pathology\",\n    draft_status: \"DRAFT ONLY - NOT FINAL SIGN-OUT\",\n    generated_at: processedAt,\n    source: {\n        source_adapter: msg.sourceAdapter || \"baserow_prototype\",\n        source_record_id: msg.sourceRecordId || null,\n        previous_status: msg.currentStatus || null\n    },\n    normalized_case: normalizedCase,\n    workflow_gaps: workflowGaps,\n    contracts: {\n        referral_intake_contract: {\n            source_system: \"baserow\",\n            referral: pathologyWorkflow.referral\n        },\n        case_handoff_contract: {\n            target_system: \"openelis\",\n            accession_id: pathologyWorkflow.case.accession_id || normalizedCase.case_id,\n            openelis_case_id: pathologyWorkflow.case.openelis_case_id || \"\",\n            handoff_payload_preview: {\n                patient_identifier: pathologyWorkflow.referral.patient_identifier || \"\",\n                patient_name: pathologyWorkflow.referral.patient_name || \"\",\n                program: pathologyWorkflow.case.program || \"Histopathology\",\n                default_sample_type: pathologyWorkflow.case.default_sample_type || \"Histopathology specimen\",\n                specimen_type: normalizedCase.specimen_type || \"\",\n                specimen_site: normalizedCase.specimen_site || \"\",\n                clinical_background: normalizedCase.clinical_background || \"\",\n                referral_requested_tests: []\n            }\n        },\n        processing_update_contract: {\n            allowed_primary_methods: [\n                \"routine processing\",\n                \"wax/paraffin block processing\",\n                \"impression cytology\",\n                \"frozen section\",\n                \"cell block\",\n                \"special handling / other\"\n            ],\n            current_processing_decision: pathologyWorkflow.processing_decision\n        },\n        dynamic_test_request_contract: {\n            allowed_requester_roles: [\"pathologist\", \"senior_tech\"],\n            supports_additional_stain: true,\n            supports_ihc_marker: true,\n            supports_repeat_stain: true,\n            supports_repeat_section_recut: true,\n            current_requests: pathologyWorkflow.test_requests\n        },\n        label_payload_contract: {\n            print_stage: \"accessioning\",\n            reprint_supported: true,\n            label_payloads: labelPayloads\n        },\n        barcode_resolution_contract: {\n            barcode_value: labelPayloads.slide_label.barcode_value,\n            case_id: normalizedCase.case_id,\n            openelis_case_id: pathologyWorkflow.case.openelis_case_id || \"\",\n            case_detail_route: portalBaseUrl.replace(/\\/$/, \"\") + \"/cases/\" + encodeURIComponent(normalizedCase.case_id),\n            preferred_target_system: pathologyWorkflow.case.openelis_case_id ? \"openelis\" : \"behring\"\n        },\n        image_asset_contract: {\n            portal_model: \"private_portal\",\n            assets: pathologyWorkflow.image_assets,\n            local_storage_expected: true\n        },\n        report_status_contract: {\n            allowed_statuses: [\"draft\", \"finalized_pending\", \"countersigned\"],\n            current_status: pathologyWorkflow.report.status || \"draft\",\n            countersign_required: true\n        }\n    },\n    draft_report: {\n        case_identifier: normalizedCase.case_id,\n        specimen_summary: normalizedCase.specimen_type + \" from \" + normalizedCase.specimen_site,\n        clinical_summary: normalizedCase.clinical_background,\n        program: pathologyWorkflow.case.program || \"Histopathology\",\n        default_sample_type: pathologyWorkflow.case.default_sample_type || \"Histopathology specimen\",\n        processing_method: pathologyWorkflow.processing_decision.primary_method || \"\",\n        requested_tests_summary: pathologyWorkflow.test_requests.map(function(request) { return request.requested_test; }),\n        notes: [\n            \"Auto-generated draft payload for pathology workflow review.\",\n            \"Detailed test and stain choices are deferred to pathologist review in OpenELIS.\",\n            \"No final diagnosis or sign-out has been produced in this version.\"\n        ]\n    },\n    prompt_payload: {\n        task: \"Prepare a draft pathology workflow payload from normalized case data.\",\n        constraints: [\n            \"Return draft output only.\",\n            \"Do not produce final sign-out.\",\n            \"Preserve clinical uncertainty where applicable.\",\n            \"Track gross processing, dynamic test requests, and report status transitions.\",\n            \"Default intake handoff to Histopathology and Histopathology specimen unless explicitly overridden.\",\n            \"Return strict JSON in later AI steps.\"\n        ],\n        structured_input: normalizedCase\n    }\n};\n\nmsg.processingSummary = {\n    ok: true,\n    sourceRecordId: msg.sourceRecordId || null,\n    sourceAdapter: msg.sourceAdapter || \"baserow_prototype\",\n    previousStatus: msg.currentStatus || null,\n    status: \"Draft Generated\",\n    draftPayload: draftPayload\n};\n\nmsg.normalizedWorkflowResult = {\n    workflow_status: \"Draft Generated\",\n    draft_payload: draftPayload,\n    error_message: \"\",\n    processed_at: processedAt\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 620,
+        "wires": [
+            [
+                "85724bf1476cbe8a"
+            ]
+        ]
+    },
+    {
+        "id": "a508d995f877eb35",
+        "type": "comment",
+        "z": "ab45109def0cb17f",
+        "name": "Live Baserow Update Adapter",
+        "info": "Baserow-specific update adapter.\nIt translates normalized workflow results into Baserow field updates for status, draft report, error message, and last processed at.\nBASEROW_TABLE_ID comes from environment configuration.\nThe target row id comes dynamically from the current source record id, not from a fixed environment value.\nReplace this section later with an OpenELIS update adapter.",
+        "x": 170,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "85724bf1476cbe8a",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Baserow adapter: build PATCH",
+        "func": "var configuredAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar normalizedResult = msg.normalizedWorkflowResult;\nvar sourceRecordId = Number(msg.sourceRecordId);\nvar sourceRecord = msg.sourceRecord || {};\nvar missingVars = [];\nvar updatePayload = {};\n\nfunction pickExistingKey(record, candidates, fallbackKey) {\n    var i;\n    for (i = 0; i < candidates.length; i += 1) {\n        if (Object.prototype.hasOwnProperty.call(record, candidates[i])) {\n            return candidates[i];\n        }\n    }\n    return fallbackKey;\n}\n\nmsg.destinationUpdateAttempted = false;\nmsg.destinationUpdateOk = false;\nmsg.destinationUpdateStatus = null;\nmsg.destinationUpdateMissingConfig = [];\nmsg.destinationUpdateError = \"\";\nmsg.destinationUpdateHttpStatusCode = null;\nmsg.destinationUpdateResponse = null;\n\nif (configuredAdapter !== \"baserow_prototype\") {\n    msg.destinationUpdateStatus = \"Skipped - Unsupported Adapter\";\n    msg.destinationUpdateError = \"This prototype update adapter only supports SOURCE_ADAPTER=baserow_prototype. Current value: \" + configuredAdapter;\n    return [null, msg];\n}\n\nif (!normalizedResult || typeof normalizedResult !== \"object\") {\n    msg.destinationUpdateStatus = \"Skipped - Missing Workflow Result\";\n    msg.destinationUpdateError = \"No normalized workflow result is available for destination update translation.\";\n    return [null, msg];\n}\n\nif (!Number.isInteger(sourceRecordId) || sourceRecordId <= 0) {\n    msg.destinationUpdateStatus = \"Skipped - Missing Source Record Id\";\n    msg.destinationUpdateError = \"No valid numeric sourceRecordId is available for the destination update adapter.\";\n    return [null, msg];\n}\n\nmsg.sourceRecordId = sourceRecordId;\n\nif (!baseUrl) { missingVars.push(\"BASEROW_BASE_URL\"); }\nif (!token) { missingVars.push(\"BASEROW_TOKEN\"); }\nif (!tableId) { missingVars.push(\"BASEROW_TABLE_ID\"); }\n\nif (missingVars.length > 0) {\n    msg.destinationUpdateStatus = \"Skipped - Missing Config\";\n    msg.destinationUpdateMissingConfig = missingVars;\n    msg.destinationUpdateError = \"Missing runtime configuration for Baserow destination update.\";\n    return [null, msg];\n}\n\nupdatePayload[pickExistingKey(sourceRecord, [\"Status\", \"status\"], \"Status\")] = normalizedResult.workflow_status;\n\nif (Object.prototype.hasOwnProperty.call(sourceRecord, \"Draft report\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"draft report\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"Draft Report\")) {\n    updatePayload[pickExistingKey(sourceRecord, [\"Draft report\", \"draft report\", \"Draft Report\"], \"draft report\")] = normalizedResult.draft_payload ? JSON.stringify(normalizedResult.draft_payload, null, 2) : \"\";\n}\n\nif (Object.prototype.hasOwnProperty.call(sourceRecord, \"Error message\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"error message\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"Error Message\")) {\n    updatePayload[pickExistingKey(sourceRecord, [\"Error message\", \"error message\", \"Error Message\"], \"error message\")] = normalizedResult.error_message || \"\";\n}\n\nif (Object.prototype.hasOwnProperty.call(sourceRecord, \"Last processed at\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"last processed at\") || Object.prototype.hasOwnProperty.call(sourceRecord, \"Last Processed At\")) {\n    updatePayload[pickExistingKey(sourceRecord, [\"Last processed at\", \"last processed at\", \"Last Processed At\"], \"last processed at\")] = normalizedResult.processed_at || new Date().toISOString();\n}\n\nmsg.destinationUpdateAttempted = true;\nmsg.method = \"PATCH\";\nmsg.url = baseUrl.replace(/\\/$/, \"\") + \"/api/database/rows/table/\" + tableId + \"/\" + sourceRecordId + \"/?user_field_names=true\";\nmsg.headers = {\n    \"Authorization\": \"Token \" + token,\n    \"Content-Type\": \"application/json\",\n    \"Accept\": \"application/json\"\n};\nmsg.payload = updatePayload;\nreturn [msg, null];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 750,
+        "wires": [
+            [
+                "b889efc7c9979117"
+            ],
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "b889efc7c9979117",
+        "type": "http request",
+        "z": "ab45109def0cb17f",
+        "name": "PATCH Baserow row",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 700,
+        "y": 750,
+        "wires": [
+            [
+                "1a95a7396bc98858"
+            ]
+        ]
+    },
+    {
+        "id": "1a95a7396bc98858",
+        "type": "function",
+        "z": "ab45109def0cb17f",
+        "name": "Build output status",
+        "func": "function hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nfunction buildConfigCheck() {\n    var sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\n    var baseUrl = env.get(\"BASEROW_BASE_URL\");\n    var token = env.get(\"BASEROW_TOKEN\");\n    var tableId = env.get(\"BASEROW_TABLE_ID\");\n    var configCheck = {\n        source_adapter: sourceAdapter,\n        baserow_base_url_present: hasValue(baseUrl),\n        baserow_table_id_present: hasValue(tableId),\n        baserow_token_present: hasValue(token),\n        missing_config: []\n    };\n    if (!configCheck.baserow_base_url_present) { configCheck.missing_config.push(\"BASEROW_BASE_URL\"); }\n    if (!configCheck.baserow_table_id_present) { configCheck.missing_config.push(\"BASEROW_TABLE_ID\"); }\n    if (!configCheck.baserow_token_present) { configCheck.missing_config.push(\"BASEROW_TOKEN\"); }\n    return configCheck;\n}\n\nvar finalHttpStatusCode = (typeof msg.statusCode === \"number\") ? msg.statusCode : 200;\nvar response;\nvar configCheck = buildConfigCheck();\n\nif (msg.payload && msg.payload.ok === false && !msg.processingSummary) {\n    response = msg.payload;\n    response.config_check_result = configCheck;\n    response.final_result = {\n        ok: false,\n        overall_status: \"Error\",\n        final_http_status_code: finalHttpStatusCode\n    };\n} else if (msg.processingSummary) {\n    var processingOk = !!msg.processingSummary.ok;\n    var destinationUpdateAttempted = !!msg.destinationUpdateAttempted;\n    var destinationUpdateOk = false;\n    var destinationUpdateStatus = msg.destinationUpdateStatus || null;\n    var destinationUpdateMissingConfig = [];\n    var destinationUpdateError = msg.destinationUpdateError || \"\";\n    var destinationUpdateHttpStatusCode = null;\n    var destinationUpdateResponse = null;\n\n    if (destinationUpdateAttempted) {\n        destinationUpdateHttpStatusCode = finalHttpStatusCode;\n        destinationUpdateResponse = msg.payload;\n        destinationUpdateOk = finalHttpStatusCode < 400;\n        destinationUpdateStatus = destinationUpdateOk ? \"Updated\" : \"Error\";\n        if (!destinationUpdateOk && !destinationUpdateError) {\n            destinationUpdateError = \"Destination update adapter failed.\";\n        }\n    } else {\n        destinationUpdateOk = false;\n        destinationUpdateMissingConfig = msg.destinationUpdateMissingConfig || [];\n    }\n\n    response = {\n        ok: processingOk,\n        overall_status: processingOk ? msg.processingSummary.status : \"Error\",\n        processing_ok: processingOk,\n        destination_update_attempted: destinationUpdateAttempted,\n        destination_update_ok: destinationUpdateOk,\n        destination_update_status: destinationUpdateStatus,\n        config_check_result: configCheck,\n        processing_result: {\n            processing_ok: processingOk,\n            status: processingOk ? msg.processingSummary.status : \"Error\",\n            source_adapter: msg.sourceAdapter || null,\n            source_record_id: msg.sourceRecordId || null,\n            normalized_case: msg.normalizedCase || null,\n            normalized_workflow_result: msg.normalizedWorkflowResult || null,\n            summary: msg.processingSummary\n        },\n        destination_update_result: {\n            attempted: destinationUpdateAttempted,\n            ok: destinationUpdateOk,\n            status: destinationUpdateStatus\n        },\n        final_result: {\n            ok: processingOk,\n            overall_status: processingOk ? msg.processingSummary.status : \"Error\",\n            final_http_status_code: finalHttpStatusCode\n        }\n    };\n\n    if (destinationUpdateAttempted) {\n        response.destination_update_result.http_status_code = destinationUpdateHttpStatusCode;\n        response.destination_update_result.response = destinationUpdateResponse;\n    } else if (destinationUpdateMissingConfig.length > 0) {\n        response.destination_update_result.missing_config = destinationUpdateMissingConfig;\n    }\n\n    if (destinationUpdateError) {\n        response.destination_update_result.error = destinationUpdateError;\n    }\n} else {\n    response = {\n        ok: finalHttpStatusCode < 400,\n        overall_status: finalHttpStatusCode < 400 ? \"OK\" : \"Error\",\n        processing_ok: finalHttpStatusCode < 400,\n        destination_update_attempted: false,\n        destination_update_ok: false,\n        destination_update_status: null,\n        config_check_result: configCheck,\n        final_result: {\n            ok: finalHttpStatusCode < 400,\n            overall_status: finalHttpStatusCode < 400 ? \"OK\" : \"Error\",\n            final_http_status_code: finalHttpStatusCode\n        }\n    };\n}\n\nmsg.statusCode = finalHttpStatusCode;\nmsg.payload = response;\n\nif (msg.res) {\n    return [msg, null];\n}\nreturn [null, msg];",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 950,
+        "y": 730,
+        "wires": [
+            [
+                "378f6a6a8cb8a0d3"
+            ],
+            [
+                "a0495c89820adaf2"
+            ]
+        ]
+    },
+    {
+        "id": "378f6a6a8cb8a0d3",
+        "type": "http response",
+        "z": "ab45109def0cb17f",
+        "name": "HTTP response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1170,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "a0495c89820adaf2",
+        "type": "debug",
+        "z": "ab45109def0cb17f",
+        "name": "Flow result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload.overall_status",
+        "statusType": "msg",
+        "x": 1160,
+        "y": 770,
+        "wires": []
+    },
+    {
+        "id": "b45ac35a231f734b",
+        "type": "debug",
+        "z": "ab45109def0cb17f",
+        "name": "Config check result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload.ok",
+        "statusType": "msg",
+        "x": 670,
+        "y": 280,
+        "wires": []
+    }
+]

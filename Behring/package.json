@@ -1,0 +1,27 @@
+{
+  "name": "behring",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "nodered": "node node_modules/node-red/red.js -u .node-red",
+    "nodered:safe": "node node_modules/node-red/red.js -u .node-red --safe",
+    "workbench": "./scripts/start-dev-workbench.sh",
+    "workbench:links": "./scripts/open-dev-links.sh",
+    "tunnel:baserow": "./scripts/start-baserow-tunnel.sh",
+    "tunnel:baserow:restart": "./scripts/restart-baserow-tunnel.sh",
+    "tunnel:openelis": "./scripts/start-openelis-tunnel.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "node-red": "^4.1.8"
+  }
+}

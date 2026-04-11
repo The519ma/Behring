@@ -1,0 +1,155 @@
+{
+  "ok": true,
+  "overall_status": "Draft Generated",
+  "processing_ok": true,
+  "destination_update_ok": false,
+  "destination_update_status": "Skipped - Missing Config",
+  "destination_update_missing_config": [
+    "BASEROW_BASE_URL",
+    "BASEROW_TOKEN",
+    "BASEROW_TABLE_ID"
+  ],
+  "sourceAdapter": "baserow_prototype",
+  "sourceRecordId": 1,
+  "normalizedCase": {
+    "case_id": "LAB-001",
+    "patient_age_or_age_sex": "Age / Sex",
+    "referrer": "Referring clinician",
+    "specimen_type": "Specimen type here",
+    "specimen_site": "Specimen site here",
+    "orientation": "Orientation if provided",
+    "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+    "status": "New"
+  },
+  "normalizedWorkflowResult": {
+    "workflow_status": "Draft Generated",
+    "draft_payload": {
+      "schema_version": "reporting-middleware-v1",
+      "draft_status": "DRAFT ONLY - NOT FINAL SIGN-OUT",
+      "generated_at": "2026-04-04T13:23:27.358Z",
+      "source": {
+        "source_adapter": "baserow_prototype",
+        "source_record_id": 1,
+        "previous_status": "New"
+      },
+      "normalized_case": {
+        "case_id": "LAB-001",
+        "patient_age_or_age_sex": "Age / Sex",
+        "referrer": "Referring clinician",
+        "specimen_type": "Specimen type here",
+        "specimen_site": "Specimen site here",
+        "orientation": "Orientation if provided",
+        "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+        "status": "New"
+      },
+      "draft_report": {
+        "case_identifier": "LAB-001",
+        "specimen_summary": "Specimen type here from Specimen site here",
+        "clinical_summary": "Insert relevant clinical history and provisional diagnosis if available.",
+        "notes": [
+          "Auto-generated draft payload for review.",
+          "No final diagnosis or sign-out has been produced in this version."
+        ]
+      },
+      "prompt_payload": {
+        "task": "Prepare a draft pathology report from normalized case data.",
+        "constraints": [
+          "Return draft output only.",
+          "Do not produce final sign-out.",
+          "Preserve clinical uncertainty where applicable.",
+          "Return strict JSON in later AI steps."
+        ],
+        "structured_input": {
+          "case_id": "LAB-001",
+          "patient_age_or_age_sex": "Age / Sex",
+          "referrer": "Referring clinician",
+          "specimen_type": "Specimen type here",
+          "specimen_site": "Specimen site here",
+          "orientation": "Orientation if provided",
+          "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+          "status": "New"
+        }
+      }
+    },
+    "error_message": "",
+    "processed_at": "2026-04-04T13:23:27.358Z"
+  },
+  "destinationUpdate": {
+    "status": "Draft Generated",
+    "draft report": "{\n  \"schema_version\": \"reporting-middleware-v1\",\n  \"draft_status\": \"DRAFT ONLY - NOT FINAL SIGN-OUT\",\n  \"generated_at\": \"2026-04-04T13:23:27.358Z\",\n  \"source\": {\n    \"source_adapter\": \"baserow_prototype\",\n    \"source_record_id\": 1,\n    \"previous_status\": \"New\"\n  },\n  \"normalized_case\": {\n    \"case_id\": \"LAB-001\",\n    \"patient_age_or_age_sex\": \"Age / Sex\",\n    \"referrer\": \"Referring clinician\",\n    \"specimen_type\": \"Specimen type here\",\n    \"specimen_site\": \"Specimen site here\",\n    \"orientation\": \"Orientation if provided\",\n    \"clinical_background\": \"Insert relevant clinical history and provisional diagnosis if available.\",\n    \"status\": \"New\"\n  },\n  \"draft_report\": {\n    \"case_identifier\": \"LAB-001\",\n    \"specimen_summary\": \"Specimen type here from Specimen site here\",\n    \"clinical_summary\": \"Insert relevant clinical history and provisional diagnosis if available.\",\n    \"notes\": [\n      \"Auto-generated draft payload for review.\",\n      \"No final diagnosis or sign-out has been produced in this version.\"\n    ]\n  },\n  \"prompt_payload\": {\n    \"task\": \"Prepare a draft pathology report from normalized case data.\",\n    \"constraints\": [\n      \"Return draft output only.\",\n      \"Do not produce final sign-out.\",\n      \"Preserve clinical uncertainty where applicable.\",\n      \"Return strict JSON in later AI steps.\"\n    ],\n    \"structured_input\": {\n      \"case_id\": \"LAB-001\",\n      \"patient_age_or_age_sex\": \"Age / Sex\",\n      \"referrer\": \"Referring clinician\",\n      \"specimen_type\": \"Specimen type here\",\n      \"specimen_site\": \"Specimen site here\",\n      \"orientation\": \"Orientation if provided\",\n      \"clinical_background\": \"Insert relevant clinical history and provisional diagnosis if available.\",\n      \"status\": \"New\"\n    }\n  }\n}",
+    "error message": "",
+    "last processed at": "2026-04-04T13:23:27.358Z"
+  },
+  "sourceStatusCode": 200,
+  "sourceResponse": {
+    "id": 1,
+    "internal lab id": "LAB-001",
+    "created on": "2026-04-04T10:00:00Z",
+    "referrer": "Referring clinician",
+    "specimen type": "Specimen type here",
+    "specimen site": "Specimen site here",
+    "orientation": "Orientation if provided",
+    "age": "Age / Sex",
+    "folder URL": "",
+    "QR URL": "",
+    "Barcode value": "BARCODE-001",
+    "Brief clinical background": "Insert relevant clinical history and provisional diagnosis if available.",
+    "status": "New"
+  },
+  "processingSummary": {
+    "ok": true,
+    "sourceRecordId": 1,
+    "sourceAdapter": "baserow_prototype",
+    "previousStatus": "New",
+    "status": "Draft Generated",
+    "draftPayload": {
+      "schema_version": "reporting-middleware-v1",
+      "draft_status": "DRAFT ONLY - NOT FINAL SIGN-OUT",
+      "generated_at": "2026-04-04T13:23:27.358Z",
+      "source": {
+        "source_adapter": "baserow_prototype",
+        "source_record_id": 1,
+        "previous_status": "New"
+      },
+      "normalized_case": {
+        "case_id": "LAB-001",
+        "patient_age_or_age_sex": "Age / Sex",
+        "referrer": "Referring clinician",
+        "specimen_type": "Specimen type here",
+        "specimen_site": "Specimen site here",
+        "orientation": "Orientation if provided",
+        "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+        "status": "New"
+      },
+      "draft_report": {
+        "case_identifier": "LAB-001",
+        "specimen_summary": "Specimen type here from Specimen site here",
+        "clinical_summary": "Insert relevant clinical history and provisional diagnosis if available.",
+        "notes": [
+          "Auto-generated draft payload for review.",
+          "No final diagnosis or sign-out has been produced in this version."
+        ]
+      },
+      "prompt_payload": {
+        "task": "Prepare a draft pathology report from normalized case data.",
+        "constraints": [
+          "Return draft output only.",
+          "Do not produce final sign-out.",
+          "Preserve clinical uncertainty where applicable.",
+          "Return strict JSON in later AI steps."
+        ],
+        "structured_input": {
+          "case_id": "LAB-001",
+          "patient_age_or_age_sex": "Age / Sex",
+          "referrer": "Referring clinician",
+          "specimen_type": "Specimen type here",
+          "specimen_site": "Specimen site here",
+          "orientation": "Orientation if provided",
+          "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+          "status": "New"
+        }
+      }
+    }
+  },
+  "destination_update_error": "Missing runtime configuration for Baserow destination update."
+}

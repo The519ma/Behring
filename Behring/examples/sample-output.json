@@ -1,0 +1,203 @@
+{
+  "ok": true,
+  "overall_status": "Draft Generated",
+  "processing_ok": true,
+  "destination_update_attempted": false,
+  "destination_update_ok": false,
+  "destination_update_status": "Skipped - Missing Config",
+  "config_check_result": {
+    "source_adapter": "baserow_prototype",
+    "baserow_base_url_present": false,
+    "baserow_table_id_present": false,
+    "baserow_token_present": false,
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TABLE_ID",
+      "BASEROW_TOKEN"
+    ]
+  },
+  "processing_result": {
+    "processing_ok": true,
+    "status": "Draft Generated",
+    "source_adapter": "baserow_prototype",
+    "source_record_id": 1,
+    "normalized_case": {
+      "case_id": "LAB-001",
+      "patient_age_or_age_sex": "54 / Female",
+      "referrer": "Dr Referrer",
+      "specimen_type": "Cervical biopsy",
+      "specimen_site": "Cervix",
+      "orientation": "",
+      "clinical_background": "Postmenopausal bleeding. Rule out malignancy.",
+      "status": "Accepted",
+      "pathology_workflow": {
+        "referral": {
+          "referral_id": 1,
+          "intake_status": "Accepted",
+          "patient_identifier": "MRN-1001",
+          "patient_name": "Jane Doe",
+          "referrer": "Dr Referrer",
+          "specimen_description": "Cervical biopsy / Cervix",
+          "clinical_background": "Postmenopausal bleeding. Rule out malignancy.",
+          "attachment_urls": [
+            "https://local.intake/referrals/REF-001.pdf"
+          ],
+          "originally_requested_tests": []
+        },
+        "case": {
+          "accession_id": "LAB-001",
+          "openelis_case_id": "OE-0001",
+          "program": "Histopathology",
+          "default_sample_type": "Histopathology specimen",
+          "workflow_state": "Accepted",
+          "grossing_owner": "Senior Tech A",
+          "reporting_owner": "Dr Pathologist",
+          "accessioned_at": "2026-04-10T10:15:00Z"
+        },
+        "processing_decision": {
+          "primary_method": "wax/paraffin block processing",
+          "notes": "Grossing completed. Block setting in progress. Impression cytology may be required if delay persists.",
+          "selected_at": "2026-04-10T10:15:00Z",
+          "selected_by": "Senior Tech A"
+        },
+        "test_requests": [
+          {
+            "request_id": "POST_REVIEW-REQ-1",
+            "request_source": "post_review",
+            "category": "ihc_marker",
+            "requested_test": "IHC: p16",
+            "requested_by_role": "senior_tech_or_pathologist",
+            "requested_by_user": "",
+            "requested_at": "2026-04-10T10:15:00Z",
+            "reason": "Requested after review",
+            "status": "requested"
+          },
+          {
+            "request_id": "POST_REVIEW-REQ-2",
+            "request_source": "post_review",
+            "category": "repeat_stain",
+            "requested_test": "Repeat stain: deeper section",
+            "requested_by_role": "senior_tech_or_pathologist",
+            "requested_by_user": "",
+            "requested_at": "2026-04-10T10:15:00Z",
+            "reason": "Requested after review",
+            "status": "requested"
+          }
+        ],
+        "artifacts": {
+          "block_id": "B1",
+          "slide_id": "S1",
+          "slide_barcode": "SLIDE-LAB-001-S1",
+          "report_barcode": "REPORT-LAB-001",
+          "lab_record_barcode": "LABREC-LAB-001",
+          "label_reprint_required": true
+        },
+        "report": {
+          "draft_text": "Initial morphology pending pathologist review.",
+          "status": "finalized_pending",
+          "finalized_at": "2026-04-10T10:15:00Z",
+          "countersigned_at": "",
+          "countersigned_by": ""
+        },
+        "image_assets": [
+          {
+            "image_id": "LAB-001-IMG-1",
+            "image_type": "microscope_capture",
+            "uploaded_by": "",
+            "uploaded_at": "2026-04-10T10:15:00Z",
+            "storage_key": "camera-upload/pap-001.jpg",
+            "portal_token": "LAB-001-token-1",
+            "portal_url": "https://behring.local/portal/cases/LAB-001/images/LAB-001-IMG-1?token=LAB-001-token-1",
+            "qr_target_url": "https://behring.local/portal/cases/LAB-001?token=LAB-001-token-1"
+          },
+          {
+            "image_id": "LAB-001-IMG-2",
+            "image_type": "microscope_capture",
+            "uploaded_by": "",
+            "uploaded_at": "2026-04-10T10:15:00Z",
+            "storage_key": "camera-upload/pap-002.jpg",
+            "portal_token": "LAB-001-token-2",
+            "portal_url": "https://behring.local/portal/cases/LAB-001/images/LAB-001-IMG-2?token=LAB-001-token-2",
+            "qr_target_url": "https://behring.local/portal/cases/LAB-001?token=LAB-001-token-2"
+          }
+        ]
+      }
+    },
+    "normalized_workflow_result": {
+      "workflow_status": "Draft Generated",
+        "draft_payload": {
+          "schema_version": "reporting-middleware-v1-pathology",
+          "draft_status": "DRAFT ONLY - NOT FINAL SIGN-OUT",
+          "generated_at": "2026-04-10T10:20:00.000Z",
+          "workflow_gaps": [],
+          "contracts": {
+            "case_handoff_contract": {
+              "target_system": "openelis",
+              "accession_id": "LAB-001",
+              "openelis_case_id": "OE-0001",
+              "handoff_payload_preview": {
+                "patient_identifier": "MRN-1001",
+                "patient_name": "Jane Doe",
+                "program": "Histopathology",
+                "default_sample_type": "Histopathology specimen",
+                "specimen_type": "Cervical biopsy",
+                "specimen_site": "Cervix",
+                "clinical_background": "Postmenopausal bleeding. Rule out malignancy.",
+                "referral_requested_tests": []
+              }
+            },
+            "label_payload_contract": {
+              "print_stage": "accessioning",
+              "reprint_supported": true
+            },
+            "barcode_resolution_contract": {
+            "barcode_value": "SLIDE-LAB-001-S1",
+            "case_id": "LAB-001",
+            "openelis_case_id": "OE-0001",
+            "case_detail_route": "https://behring.local/cases/LAB-001",
+            "preferred_target_system": "openelis"
+          },
+          "report_status_contract": {
+            "allowed_statuses": [
+              "draft",
+              "finalized_pending",
+              "countersigned"
+            ],
+            "current_status": "finalized_pending",
+            "countersign_required": true
+          }
+        },
+        "draft_report": {
+          "case_identifier": "LAB-001",
+          "specimen_summary": "Cervical biopsy from Cervix",
+          "clinical_summary": "Postmenopausal bleeding. Rule out malignancy.",
+          "program": "Histopathology",
+          "default_sample_type": "Histopathology specimen",
+          "processing_method": "wax/paraffin block processing",
+          "requested_tests_summary": [
+            "IHC: p16",
+            "Repeat stain: deeper section"
+          ]
+        }
+      },
+      "error_message": "",
+      "processed_at": "2026-04-10T10:20:00.000Z"
+    }
+  },
+  "destination_update_result": {
+    "attempted": false,
+    "ok": false,
+    "status": "Skipped - Missing Config",
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TOKEN",
+      "BASEROW_TABLE_ID"
+    ],
+    "error": "Missing runtime configuration for Baserow destination update."
+  },
+  "final_result": {
+    "ok": true,
+    "overall_status": "Draft Generated",
+    "final_http_status_code": 200
+  }
+}

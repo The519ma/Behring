@@ -1,0 +1,12 @@
+internal lab id
+created on
+referrer
+specimen type
+specimen site
+orientation
+age
+folder URL
+QR URL
+Barcode value
+Brief clinical background
+status

@@ -1,0 +1,207 @@
+{
+  "ok": true,
+  "overall_status": "Draft Generated",
+  "source_read_ok": true,
+  "source_read_status": "Direct Input Ready",
+  "processing_ok": true,
+  "processing_status": "Draft Generated",
+  "destination_update_attempted": false,
+  "destination_update_ok": false,
+  "destination_update_status": "Skipped - Direct Input Test Mode",
+  "destination_update_payload_preview": null,
+  "destination_update_http_status": null,
+  "destination_update_response": null,
+  "config_check_result": {
+    "source_adapter": "baserow_prototype",
+    "baserow_base_url_present": false,
+    "baserow_table_id_present": false,
+    "baserow_token_present": false,
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TABLE_ID",
+      "BASEROW_TOKEN"
+    ]
+  },
+  "source_read_result": {
+    "ok": true,
+    "status": "Direct Input Ready",
+    "http_status": null,
+    "response": {
+      "id": 1,
+      "internal lab id": "LAB-001",
+      "created on": "2026-04-04T10:00:00Z",
+      "referrer": "Referring clinician",
+      "specimen type": "Specimen type here",
+      "specimen site": "Specimen site here",
+      "orientation": "Orientation if provided",
+      "age": "Age / Sex",
+      "folder URL": "",
+      "QR URL": "",
+      "Barcode value": "BARCODE-001",
+      "Brief clinical background": "Insert relevant clinical history and provisional diagnosis if available.",
+      "status": "New"
+    }
+  },
+  "processing_result": {
+    "processing_ok": true,
+    "status": "Draft Generated",
+    "source_adapter": "baserow_prototype",
+    "source_record_id": 1,
+    "normalized_case": {
+      "case_id": "LAB-001",
+      "patient_age_or_age_sex": "Age / Sex",
+      "referrer": "Referring clinician",
+      "specimen_type": "Specimen type here",
+      "specimen_site": "Specimen site here",
+      "orientation": "Orientation if provided",
+      "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+      "status": "New"
+    },
+    "normalized_workflow_result": {
+      "workflow_status": "Draft Generated",
+      "draft_payload": {
+        "schema_version": "reporting-middleware-v1",
+        "draft_status": "DRAFT ONLY - NOT FINAL SIGN-OUT",
+        "generated_at": "2026-04-04T10:05:00.000Z",
+        "source": {
+          "source_adapter": "baserow_prototype",
+          "source_record_id": 1,
+          "previous_status": "New"
+        },
+        "normalized_case": {
+          "case_id": "LAB-001",
+          "patient_age_or_age_sex": "Age / Sex",
+          "referrer": "Referring clinician",
+          "specimen_type": "Specimen type here",
+          "specimen_site": "Specimen site here",
+          "orientation": "Orientation if provided",
+          "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+          "status": "New"
+        },
+        "report_handoff": {
+          "report_type": "Histopathology Report",
+          "report_sections": {
+            "patient_name": "",
+            "lab_number": "LAB-001",
+            "age_orientation": "Age / Sex / Orientation if provided",
+            "received_on": "2026-04-04T10:00:00Z",
+            "reported_on": "",
+            "ref_by": "Referring clinician",
+            "specimen_tested": "Specimen type here - Specimen site here",
+            "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+            "macroscopic_description": "Specimen received labelled as Specimen type here from Specimen site here. Gross examination details to be completed during reporting review.",
+            "microscopic_description": "Microscopic examination findings to be added during pathologist review.",
+            "impression": "Draft impression pending pathologist review.",
+            "pathologist_signout_placeholder": "Manual sign-out required"
+          },
+          "handoff_checklist": {
+            "auto_filled_sections": [
+              "lab_number",
+              "age_orientation",
+              "ref_by",
+              "specimen_tested",
+              "clinical_background",
+              "macroscopic_description",
+              "microscopic_description",
+              "impression"
+            ],
+            "draft_sections_available_for_future_generation": [
+              "draft_macroscopic_description",
+              "draft_microscopic_description",
+              "draft_impression"
+            ],
+            "manual_sections_required": [
+              "patient_name",
+              "reported_on",
+              "pathologist_signout_placeholder"
+            ],
+            "report_ready_for_final_signout": false
+          }
+        },
+        "draft_sections": {
+          "draft_macroscopic_description": "Specimen received labelled as Specimen type here from Specimen site here. Gross examination details to be completed during reporting review.",
+          "draft_microscopic_description": "Microscopic examination findings to be added during pathologist review.",
+          "draft_impression": "Draft impression pending pathologist review."
+        },
+        "draft_report": {
+          "case_identifier": "LAB-001",
+          "specimen_summary": "Specimen type here - Specimen site here",
+          "clinical_summary": "Insert relevant clinical history and provisional diagnosis if available.",
+          "notes": [
+            "Auto-generated draft payload for review.",
+            "No final diagnosis or sign-out has been produced in this version."
+          ]
+        },
+        "prompt_payload": {
+          "task": "Prepare a draft pathology report from normalized case data.",
+          "constraints": [
+            "Return draft output only.",
+            "Do not produce final sign-out.",
+            "Preserve clinical uncertainty where applicable.",
+            "Return strict JSON in later AI steps."
+          ],
+          "structured_input": {
+            "normalized_case": {
+              "case_id": "LAB-001",
+              "patient_age_or_age_sex": "Age / Sex",
+              "referrer": "Referring clinician",
+              "specimen_type": "Specimen type here",
+              "specimen_site": "Specimen site here",
+              "orientation": "Orientation if provided",
+              "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+              "status": "New"
+            },
+            "report_handoff": {
+              "report_type": "Histopathology Report",
+              "report_sections": {
+                "patient_name": "",
+                "lab_number": "LAB-001",
+                "age_orientation": "Age / Sex / Orientation if provided",
+                "received_on": "2026-04-04T10:00:00Z",
+                "reported_on": "",
+                "ref_by": "Referring clinician",
+                "specimen_tested": "Specimen type here - Specimen site here",
+                "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+                "macroscopic_description": "Specimen received labelled as Specimen type here from Specimen site here. Gross examination details to be completed during reporting review.",
+                "microscopic_description": "Microscopic examination findings to be added during pathologist review.",
+                "impression": "Draft impression pending pathologist review.",
+                "pathologist_signout_placeholder": "Manual sign-out required"
+              }
+            },
+            "draft_sections": {
+              "draft_macroscopic_description": "Specimen received labelled as Specimen type here from Specimen site here. Gross examination details to be completed during reporting review.",
+              "draft_microscopic_description": "Microscopic examination findings to be added during pathologist review.",
+              "draft_impression": "Draft impression pending pathologist review."
+            }
+          }
+        }
+      },
+      "error_message": "",
+      "processed_at": "2026-04-04T10:05:00.000Z"
+    },
+    "summary": {
+      "ok": true,
+      "sourceRecordId": 1,
+      "sourceAdapter": "baserow_prototype",
+      "previousStatus": "New",
+      "status": "Draft Generated"
+    }
+  },
+  "destination_update_result": {
+    "attempted": false,
+    "ok": false,
+    "status": "Skipped - Direct Input Test Mode",
+    "payload_preview": null,
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TOKEN",
+      "BASEROW_TABLE_ID"
+    ],
+    "error": "Direct-input/sample mode does not write back to Baserow unless allow_write_back=true is provided explicitly."
+  },
+  "final_result": {
+    "ok": true,
+    "overall_status": "Draft Generated",
+    "final_http_status_code": 200
+  }
+}

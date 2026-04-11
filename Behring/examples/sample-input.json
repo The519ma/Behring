@@ -1,0 +1,39 @@
+{
+  "id": 1,
+  "Internal Lab ID": "LAB-001",
+  "Patient identifier": "MRN-1001",
+  "Patient name": "Jane Doe",
+  "created on": "2026-04-10T10:00:00Z",
+  "Accessioned at": "2026-04-10T10:15:00Z",
+  "Referrer": "Dr Referrer",
+  "Program": "Histopathology",
+  "Specimen type": "Cervical biopsy",
+  "Specimen site": "Cervix",
+  "Orientation": "",
+  "Age": "54 / Female",
+  "Brief Clinical Background": "Postmenopausal bleeding. Rule out malignancy.",
+  "Status": "Accepted",
+  "Referral attachment URLs": [
+    "https://local.intake/referrals/REF-001.pdf"
+  ],
+  "Gross processing method": "wax/paraffin block processing",
+  "Gross processing notes": "Grossing completed. Block setting in progress. Impression cytology may be required if delay persists.",
+  "Post-review requests": [
+    "IHC: p16",
+    "Repeat stain: deeper section"
+  ],
+  "OpenELIS case id": "OE-0001",
+  "Grossing owner": "Senior Tech A",
+  "Reporting owner": "Dr Pathologist",
+  "Block ID": "B1",
+  "Slide ID": "S1",
+  "Slide barcode": "SLIDE-LAB-001-S1",
+  "Report barcode": "REPORT-LAB-001",
+  "Lab record barcode": "LABREC-LAB-001",
+  "Draft report text": "Initial morphology pending pathologist review.",
+  "Report review status": "finalized_pending",
+  "Microscope image URLs": [
+    "camera-upload/pap-001.jpg",
+    "camera-upload/pap-002.jpg"
+  ]
+}

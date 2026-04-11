@@ -1,0 +1,111 @@
+{
+  "ok": true,
+  "overall_status": "Draft Generated",
+  "processing_ok": true,
+  "destination_update_attempted": false,
+  "destination_update_ok": false,
+  "destination_update_status": "Skipped - Missing Config",
+  "config_check_result": {
+    "source_adapter": "baserow_prototype",
+    "baserow_base_url_present": false,
+    "baserow_table_id_present": false,
+    "baserow_token_present": false,
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TABLE_ID",
+      "BASEROW_TOKEN"
+    ]
+  },
+  "processing_result": {
+    "processing_ok": true,
+    "status": "Draft Generated",
+    "source_adapter": "baserow_prototype",
+    "source_record_id": 1,
+    "normalized_case": {
+      "case_id": "LAB-001",
+      "patient_age_or_age_sex": "Age / Sex",
+      "referrer": "Referring clinician",
+      "specimen_type": "Specimen type here",
+      "specimen_site": "Specimen site here",
+      "orientation": "Orientation if provided",
+      "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+      "status": "New"
+    },
+    "normalized_workflow_result": {
+      "workflow_status": "Draft Generated",
+      "draft_payload": {
+        "schema_version": "reporting-middleware-v1",
+        "draft_status": "DRAFT ONLY - NOT FINAL SIGN-OUT",
+        "generated_at": "2026-04-04T10:05:00.000Z",
+        "source": {
+          "source_adapter": "baserow_prototype",
+          "source_record_id": 1,
+          "previous_status": "New"
+        },
+        "normalized_case": {
+          "case_id": "LAB-001",
+          "patient_age_or_age_sex": "Age / Sex",
+          "referrer": "Referring clinician",
+          "specimen_type": "Specimen type here",
+          "specimen_site": "Specimen site here",
+          "orientation": "Orientation if provided",
+          "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+          "status": "New"
+        },
+        "draft_report": {
+          "case_identifier": "LAB-001",
+          "specimen_summary": "Specimen type here from Specimen site here",
+          "clinical_summary": "Insert relevant clinical history and provisional diagnosis if available.",
+          "notes": [
+            "Auto-generated draft payload for review.",
+            "No final diagnosis or sign-out has been produced in this version."
+          ]
+        },
+        "prompt_payload": {
+          "task": "Prepare a draft pathology report from normalized case data.",
+          "constraints": [
+            "Return draft output only.",
+            "Do not produce final sign-out.",
+            "Preserve clinical uncertainty where applicable.",
+            "Return strict JSON in later AI steps."
+          ],
+          "structured_input": {
+            "case_id": "LAB-001",
+            "patient_age_or_age_sex": "Age / Sex",
+            "referrer": "Referring clinician",
+            "specimen_type": "Specimen type here",
+            "specimen_site": "Specimen site here",
+            "orientation": "Orientation if provided",
+            "clinical_background": "Insert relevant clinical history and provisional diagnosis if available.",
+            "status": "New"
+          }
+        }
+      },
+      "error_message": "",
+      "processed_at": "2026-04-04T10:05:00.000Z"
+    },
+    "summary": {
+      "ok": true,
+      "sourceRecordId": 1,
+      "sourceAdapter": "baserow_prototype",
+      "previousStatus": "New",
+      "status": "Draft Generated"
+    }
+  },
+  "destination_update_result": {
+    "attempted": false,
+    "ok": false,
+    "status": "Skipped - Missing Config",
+    "missing_config": [
+      "BASEROW_BASE_URL",
+      "BASEROW_TOKEN",
+      "BASEROW_TABLE_ID"
+    ],
+    "error": "Missing runtime configuration for Baserow destination update."
+  },
+  "final_result": {
+    "ok": true,
+    "overall_status": "Draft Generated",
+    "final_http_status_code": 200
+  }
+}

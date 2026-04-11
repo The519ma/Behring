@@ -1,0 +1,461 @@
+[
+  {
+    "id": "f0a1b2c3d4e5f601",
+    "type": "tab",
+    "label": "Reporting Middleware v1",
+    "disabled": false,
+    "info": "Portable middleware prototype with a Baserow adapter and source-agnostic core logic."
+  },
+  {
+    "id": "c0a1b2c3d4e5f601",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Architecture",
+    "info": "1. Entry points\n2. Live Baserow adapter path\n3. Shared normalized validation and draft logic\n4. Live Baserow update adapter\n\nAfter normalization, the flow uses only internal normalized fields.",
+    "x": 150,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "c0a1b2c3d4e5f602",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Configuration",
+    "info": "Required env vars for the live Baserow adapter path:\nSOURCE_ADAPTER=baserow_prototype\nBASEROW_BASE_URL\nBASEROW_TOKEN\nBASEROW_TABLE_ID\n\nBASEROW_TABLE_ID is fixed per prototype table.\nBaserow row id is dynamic and comes from the current source record.\nThe sample-input path does not need live Baserow config.\n\nOptional future env vars:\nOPENELIS_BASE_URL\nOPENELIS_API_TOKEN\nOPENAI_API_KEY",
+    "x": 160,
+    "y": 90,
+    "wires": []
+  },
+  {
+    "id": "c0a1b2c3d4e5f606",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Runtime Config Check",
+    "info": "Use this path to verify runtime wiring without exposing the Baserow token.\nIt reports whether BASEROW_BASE_URL, BASEROW_TOKEN, and BASEROW_TABLE_ID are present, plus the SOURCE_ADAPTER value.",
+    "x": 170,
+    "y": 130,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f601",
+    "type": "inject",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Sample input",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"id\":1,\"internal lab id\":\"LAB-001\",\"created on\":\"2026-04-04T10:00:00Z\",\"referrer\":\"Referring clinician\",\"specimen type\":\"Specimen type here\",\"specimen site\":\"Specimen site here\",\"orientation\":\"Orientation if provided\",\"age\":\"Age / Sex\",\"folder URL\":\"\",\"QR URL\":\"\",\"Barcode value\":\"BARCODE-001\",\"Brief clinical background\":\"Insert relevant clinical history and provisional diagnosis if available.\",\"status\":\"New\"}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 160,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f602"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f616",
+    "type": "inject",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Check runtime config",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 140,
+    "y": 260,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f617"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f618",
+    "type": "http in",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "GET /reporting/config-check",
+    "url": "/reporting/config-check",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 300,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f617"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f617",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Build config-check report",
+    "func": "function hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nvar sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar report = {\n    ok: true,\n    node_red_env: env.get(\"NODE_RED_ENV\") || null,\n    source_adapter: sourceAdapter,\n    baserow_base_url_present: hasValue(baseUrl),\n    baserow_table_id_present: hasValue(tableId),\n    baserow_token_present: hasValue(token),\n    missing_config: []\n};\n\nif (!report.baserow_base_url_present) { report.missing_config.push(\"BASEROW_BASE_URL\"); }\nif (!report.baserow_table_id_present) { report.missing_config.push(\"BASEROW_TABLE_ID\"); }\nif (!report.baserow_token_present) { report.missing_config.push(\"BASEROW_TOKEN\"); }\nif (sourceAdapter !== \"baserow_prototype\") { report.ok = false; }\nif (report.missing_config.length > 0) { report.ok = false; }\n\nmsg.statusCode = report.ok ? 200 : 200;\nmsg.payload = report;\nif (msg.res) {\n    return [msg, null];\n}\nreturn [null, msg];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 280,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f612"
+      ],
+      [
+        "a0a1b2c3d4e5f619"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f602",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Prepare direct source record",
+    "func": "// Accept a direct prototype row and hand it to the shared pipeline.\n// Direct-input/sample mode should act as a safe test harness by default.\nvar sourceRecord = null;\nvar allowWriteBack = false;\n\nif (msg.payload && typeof msg.payload === \"object\") {\n    if (Object.prototype.hasOwnProperty.call(msg.payload, \"allow_write_back\")) {\n        allowWriteBack = !!msg.payload.allow_write_back;\n    }\n    if (msg.payload.row && typeof msg.payload.row === \"object\") {\n        sourceRecord = msg.payload.row;\n    } else if (Array.isArray(msg.payload.results) && msg.payload.results.length === 1) {\n        sourceRecord = msg.payload.results[0];\n    } else {\n        sourceRecord = msg.payload;\n    }\n}\n\nif (!sourceRecord || typeof sourceRecord !== \"object\" || Array.isArray(sourceRecord)) {\n    msg.statusCode = 400;\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Invalid Direct Input\";\n    msg.sourceReadHttpStatus = 400;\n    msg.sourceReadResponse = msg.payload;\n    msg.payload = {\n        ok: false,\n        error: \"Expected a prototype source record in msg.payload, msg.payload.row, or a single-item msg.payload.results array.\"\n    };\n    return [null, msg];\n}\n\nmsg.sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nmsg.sourceRecord = sourceRecord;\nmsg.sourceRecordId = sourceRecord.id || null;\nmsg.sourceReadOk = true;\nmsg.sourceReadStatus = \"Direct Input Ready\";\nmsg.sourceReadHttpStatus = null;\nmsg.sourceReadResponse = sourceRecord;\nmsg.allowDestinationWriteBack = allowWriteBack;\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 410,
+    "y": 160,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f607"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f603",
+    "type": "http in",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "POST /reporting/process-row",
+    "url": "/reporting/process-row",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 150,
+    "y": 360,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f602"
+      ]
+    ]
+  },
+  {
+    "id": "c0a1b2c3d4e5f603",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Live Baserow Source Adapter",
+    "info": "Baserow-specific source adapter.\nThis path reads a real Baserow row by id and passes it into the normalized middleware pipeline.\nBASEROW_TABLE_ID comes from environment configuration.\nThe Baserow row id is provided at runtime for the read path and then carried forward from the source record.\nReplace this section later with an OpenELIS source adapter.",
+    "x": 160,
+    "y": 430,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f604",
+    "type": "http in",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "POST /reporting/process-baserow-row-by-id",
+    "url": "/reporting/process-baserow-row-by-id",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 180,
+    "y": 480,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f605"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f605",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Baserow adapter: build GET",
+    "func": "var configuredAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar rowId = msg.sourceRecordId || msg.rowId || (msg.payload && msg.payload.rowId) || (msg.req && msg.req.query && msg.req.query.rowId);\nvar missingVars = [];\n\nif (configuredAdapter !== \"baserow_prototype\") {\n    msg.statusCode = 400;\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Unsupported Adapter\";\n    msg.sourceReadHttpStatus = 400;\n    msg.sourceReadResponse = null;\n    msg.payload = {\n        ok: false,\n        error: \"This prototype flow only implements SOURCE_ADAPTER=baserow_prototype. Current value: \" + configuredAdapter\n    };\n    return [null, msg];\n}\n\nif (!baseUrl) { missingVars.push(\"BASEROW_BASE_URL\"); }\nif (!token) { missingVars.push(\"BASEROW_TOKEN\"); }\nif (!tableId) { missingVars.push(\"BASEROW_TABLE_ID\"); }\n\nif (missingVars.length > 0) {\n    msg.statusCode = 500;\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Missing Config\";\n    msg.sourceReadHttpStatus = 500;\n    msg.sourceReadResponse = null;\n    msg.payload = {\n        ok: false,\n        error: \"Missing runtime configuration for the live Baserow read path.\",\n        missing_config: missingVars,\n        hint: \"Set BASEROW_BASE_URL, BASEROW_TOKEN, and BASEROW_TABLE_ID in the Node-RED runtime environment. The sample-input path does not require these values.\"\n    };\n    return [null, msg];\n}\n\nif (!rowId) {\n    msg.statusCode = 400;\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Missing Row Id\";\n    msg.sourceReadHttpStatus = 400;\n    msg.sourceReadResponse = null;\n    msg.payload = {\n        ok: false,\n        error: \"No rowId provided. Example: { \\\"rowId\\\": 1001 }. BASEROW_TABLE_ID identifies the table, while rowId identifies the specific record inside that table.\"\n    };\n    return [null, msg];\n}\n\nmsg.sourceAdapter = configuredAdapter;\nmsg.sourceRecordId = Number(rowId);\nmsg.sourceReadOk = false;\nmsg.sourceReadStatus = \"Pending Live Read\";\nmsg.sourceReadHttpStatus = null;\nmsg.sourceReadResponse = null;\nmsg.method = \"GET\";\nmsg.url = baseUrl.replace(/\\/$/, \"\") + \"/api/database/rows/table/\" + tableId + \"/\" + msg.sourceRecordId + \"/?user_field_names=true\";\nmsg.headers = {\n    \"Authorization\": \"Token \" + token,\n    \"Accept\": \"application/json\"\n};\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 480,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f606"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f606",
+    "type": "http request",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "GET Baserow row",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 680,
+    "y": 480,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f614"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f614",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Baserow adapter: handle GET",
+    "func": "if (typeof msg.statusCode === \"number\" && msg.statusCode >= 400) {\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Live Read Failed\";\n    msg.sourceReadHttpStatus = msg.statusCode;\n    msg.sourceReadResponse = msg.payload;\n    msg.payload = {\n        ok: false,\n        error: \"Failed to fetch source record \" + msg.sourceRecordId + \" from Baserow.\",\n        sourceAdapter: msg.sourceAdapter,\n        source_read_http_status_code: msg.statusCode,\n        source_read_response: msg.payload\n    };\n    return [null, msg];\n}\n\nvar sourceRecord = null;\nif (msg.payload && typeof msg.payload === \"object\") {\n    if (msg.payload.id) {\n        sourceRecord = msg.payload;\n    } else if (msg.payload.row && typeof msg.payload.row === \"object\" && msg.payload.row.id) {\n        sourceRecord = msg.payload.row;\n    } else if (Array.isArray(msg.payload.results) && msg.payload.results.length === 1 && msg.payload.results[0] && msg.payload.results[0].id) {\n        sourceRecord = msg.payload.results[0];\n    }\n}\n\nif (!sourceRecord) {\n    msg.statusCode = 502;\n    msg.sourceReadOk = false;\n    msg.sourceReadStatus = \"Error - Unexpected Read Payload\";\n    msg.sourceReadHttpStatus = 502;\n    msg.sourceReadResponse = msg.payload;\n    msg.payload = {\n        ok: false,\n        error: \"Prototype source adapter received an unexpected Baserow payload shape. Expected a row object with an id.\",\n        sourceAdapter: msg.sourceAdapter,\n        source_read_response: msg.payload\n    };\n    return [null, msg];\n}\n\nmsg.sourceRecord = sourceRecord;\nmsg.sourceRecordId = sourceRecord.id;\nmsg.sourceReadOk = true;\nmsg.sourceReadStatus = \"Live Read OK\";\nmsg.sourceReadHttpStatus = (typeof msg.statusCode === \"number\") ? msg.statusCode : 200;\nmsg.sourceReadResponse = sourceRecord;\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 930,
+    "y": 480,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f607"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "c0a1b2c3d4e5f604",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Shared Core Logic",
+    "info": "These nodes are the reusable core for a later OpenELIS adapter swap.\nThey should not depend on Baserow field names.",
+    "x": 150,
+    "y": 570,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f607",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Normalize row",
+    "func": "// Baserow-specific source mapping is isolated here.\n// Replace this node with an OpenELIS mapping adapter later.\nvar sourceRecord = msg.sourceRecord;\nvar sourceRecordId = (sourceRecord && sourceRecord.id) ? sourceRecord.id : (msg.sourceRecordId || null);\n\nfunction normalizeBaserowValue(value) {\n    if (value === undefined || value === null) {\n        return \"\";\n    }\n    if (typeof value === \"object\") {\n        if (Object.prototype.hasOwnProperty.call(value, \"value\")) {\n            return value.value;\n        }\n        return \"\";\n    }\n    return value;\n}\n\nfunction getField(record, candidates) {\n    var i;\n    for (i = 0; i < candidates.length; i += 1) {\n        if (Object.prototype.hasOwnProperty.call(record, candidates[i])) {\n            return {\n                key: candidates[i],\n                value: normalizeBaserowValue(record[candidates[i]])\n            };\n        }\n    }\n    return {\n        key: candidates[0],\n        value: \"\"\n    };\n}\n\nif (!sourceRecord || typeof sourceRecord !== \"object\") {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"No source record is available for normalization.\"\n    };\n    return [null, msg];\n}\n\nvar fieldMap = {\n    case_id: getField(sourceRecord, [\"Internal Lab ID\", \"internal lab id\"]),\n    patient_age_or_age_sex: getField(sourceRecord, [\"Age\", \"age\"]),\n    referrer: getField(sourceRecord, [\"Referrer\", \"referrer\"]),\n    specimen_type: getField(sourceRecord, [\"Specimen type\", \"specimen type\"]),\n    specimen_site: getField(sourceRecord, [\"Specimen site\", \"specimen site\"]),\n    orientation: getField(sourceRecord, [\"Orientation\", \"orientation\"]),\n    clinical_background: getField(sourceRecord, [\"Brief Clinical Background\", \"Brief clinical background\"]),\n    status: getField(sourceRecord, [\"Status\", \"status\"])\n};\n\nmsg.sourceRecordId = sourceRecordId;\nmsg.normalizedCase = {\n    case_id: fieldMap.case_id.value || \"\",\n    patient_age_or_age_sex: fieldMap.patient_age_or_age_sex.value || \"\",\n    referrer: fieldMap.referrer.value || \"\",\n    specimen_type: fieldMap.specimen_type.value || \"\",\n    specimen_site: fieldMap.specimen_site.value || \"\",\n    orientation: fieldMap.orientation.value || \"\",\n    clinical_background: fieldMap.clinical_background.value || \"\",\n    status: fieldMap.status.value || \"\"\n};\n\nmsg.normalizationMetadata = {\n    schema_version: \"reporting-middleware-v1\",\n    source_adapter: msg.sourceAdapter || \"baserow_prototype\",\n    source_record_id: sourceRecordId,\n    mapped_from: {\n        case_id: fieldMap.case_id.key,\n        patient_age_or_age_sex: fieldMap.patient_age_or_age_sex.key,\n        referrer: fieldMap.referrer.key,\n        specimen_type: fieldMap.specimen_type.key,\n        specimen_site: fieldMap.specimen_site.key,\n        orientation: fieldMap.orientation.key,\n        clinical_background: fieldMap.clinical_background.key,\n        status: fieldMap.status.key\n    }\n};\n\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 620,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f608"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f608",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Validate normalized case",
+    "func": "var normalizedCase = msg.normalizedCase;\nvar sourceRecordId = msg.sourceRecordId || null;\nvar lockedStatuses = [\"Finalized\", \"Completed\"];\n\nif (!normalizedCase || typeof normalizedCase !== \"object\") {\n    msg.statusCode = 400;\n    msg.payload = {\n        ok: false,\n        error: \"No normalized case is available for validation.\"\n    };\n    return [null, null, msg];\n}\n\nvar currentStatus = normalizedCase.status === undefined || normalizedCase.status === null ? \"\" : String(normalizedCase.status).trim();\nvar matchedLockedStatus = lockedStatuses.find(function(statusValue) {\n    return currentStatus.toLowerCase() === statusValue.toLowerCase();\n});\nif (matchedLockedStatus) {\n    msg.processedAt = new Date().toISOString();\n    msg.currentStatus = currentStatus || null;\n    msg.processingSummary = {\n        ok: false,\n        skipped: true,\n        sourceRecordId: sourceRecordId,\n        sourceAdapter: msg.sourceAdapter,\n        previousStatus: msg.currentStatus,\n        status: \"Skipped - Locked Status\",\n        lockedStatus: matchedLockedStatus,\n        error: \"Source record \" + sourceRecordId + \" is marked \" + matchedLockedStatus + \" and will not be overwritten by the draft workflow.\"\n    };\n    msg.normalizedWorkflowResult = null;\n    msg.statusCode = 200;\n    msg.payload = {\n        ok: true,\n        skipped: true,\n        sourceRecordId: sourceRecordId,\n        status: \"Skipped - Locked Status\",\n        locked_status: matchedLockedStatus,\n        message: msg.processingSummary.error\n    };\n    return [null, null, msg];\n}\n\nvar requiredFields = [\n    \"case_id\",\n    \"patient_age_or_age_sex\",\n    \"specimen_type\",\n    \"specimen_site\",\n    \"clinical_background\"\n];\n\nfunction hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nvar missingFields = requiredFields.filter(function(fieldName) {\n    return !hasValue(normalizedCase[fieldName]);\n});\n\nmsg.processedAt = new Date().toISOString();\nmsg.currentStatus = currentStatus || null;\n\nif (missingFields.length > 0) {\n    var errorMessage = \"Missing required normalized field(s): \" + missingFields.join(\", \");\n    msg.processingSummary = {\n        ok: false,\n        sourceRecordId: sourceRecordId,\n        sourceAdapter: msg.sourceAdapter,\n        previousStatus: msg.currentStatus,\n        status: \"Error\",\n        error: errorMessage,\n        missingFields: missingFields\n    };\n    msg.normalizedWorkflowResult = {\n        workflow_status: \"Error\",\n        draft_payload: null,\n        error_message: errorMessage,\n        processed_at: msg.processedAt\n    };\n    return [null, msg, null];\n}\n\nreturn [msg, null, null];",
+    "outputs": 3,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 680,
+    "y": 620,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f609"
+      ],
+      [
+        "a0a1b2c3d4e5f610"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f609",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Build draft payload",
+    "func": "var normalizedCase = msg.normalizedCase;\nvar processedAt = msg.processedAt || new Date().toISOString();\nvar sourceRecord = msg.sourceRecord || {};\n\nfunction firstNonEmpty(values) {\n    var i;\n    for (i = 0; i < values.length; i += 1) {\n        if (values[i] !== undefined && values[i] !== null && String(values[i]).trim() !== \"\") {\n            return values[i];\n        }\n    }\n    return \"\";\n}\n\nvar specimenTested = normalizedCase.specimen_type + \" - \" + normalizedCase.specimen_site;\nvar reportSections = {\n    patient_name: firstNonEmpty([sourceRecord[\"Patient name\"], sourceRecord[\"patient name\"]]),\n    lab_number: normalizedCase.case_id,\n    age_orientation: [normalizedCase.patient_age_or_age_sex, normalizedCase.orientation].filter(function(value) {\n        return value !== undefined && value !== null && String(value).trim() !== \"\";\n    }).join(\" / \"),\n    received_on: firstNonEmpty([sourceRecord[\"Created on\"], sourceRecord[\"created on\"]]),\n    reported_on: \"\",\n    ref_by: normalizedCase.referrer,\n    specimen_tested: specimenTested,\n    clinical_background: normalizedCase.clinical_background,\n    macroscopic_description: \"\",\n    microscopic_description: \"\",\n    impression: \"\",\n    pathologist_signout_placeholder: \"Manual sign-out required\"\n};\n\nvar handoffChecklist = {\n    auto_filled_sections: [\n        \"lab_number\",\n        \"age_orientation\",\n        \"ref_by\",\n        \"specimen_tested\",\n        \"clinical_background\"\n    ],\n    manual_sections_required: [\n        \"patient_name\",\n        \"reported_on\",\n        \"macroscopic_description\",\n        \"microscopic_description\",\n        \"impression\",\n        \"pathologist_signout_placeholder\"\n    ],\n    report_ready_for_final_signout: false\n};\n\nvar draftPayload = {\n    schema_version: \"reporting-middleware-v1\",\n    draft_status: \"DRAFT ONLY - NOT FINAL SIGN-OUT\",\n    generated_at: processedAt,\n    source: {\n        source_adapter: msg.sourceAdapter || \"baserow_prototype\",\n        source_record_id: msg.sourceRecordId || null,\n        previous_status: msg.currentStatus || null\n    },\n    normalized_case: normalizedCase,\n    report_handoff: {\n        report_type: \"Histopathology Report\",\n        report_sections: reportSections,\n        handoff_checklist: handoffChecklist\n    },\n    draft_report: {\n        case_identifier: normalizedCase.case_id,\n        specimen_summary: specimenTested,\n        clinical_summary: normalizedCase.clinical_background,\n        notes: [\n            \"Auto-generated draft payload for review.\",\n            \"No final diagnosis or sign-out has been produced in this version.\"\n        ]\n    },\n    prompt_payload: {\n        task: \"Prepare a draft pathology report from normalized case data.\",\n        constraints: [\n            \"Return draft output only.\",\n            \"Do not produce final sign-out.\",\n            \"Preserve clinical uncertainty where applicable.\",\n            \"Return strict JSON in later AI steps.\"\n        ],\n        structured_input: {\n            normalized_case: normalizedCase,\n            report_handoff: {\n                report_type: \"Histopathology Report\",\n                report_sections: reportSections\n            }\n        }\n    }\n};\n\nmsg.processingSummary = {\n    ok: true,\n    sourceRecordId: msg.sourceRecordId || null,\n    sourceAdapter: msg.sourceAdapter || \"baserow_prototype\",\n    previousStatus: msg.currentStatus || null,\n    status: \"Draft Generated\",\n    draftPayload: draftPayload\n};\n\nmsg.normalizedWorkflowResult = {\n    workflow_status: \"Draft Generated\",\n    draft_payload: draftPayload,\n    error_message: \"\",\n    processed_at: processedAt\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 920,
+    "y": 620,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f610"
+      ]
+    ]
+  },
+  {
+    "id": "c0a1b2c3d4e5f605",
+    "type": "comment",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Live Baserow Update Adapter",
+    "info": "Baserow-specific update adapter.\nIt translates normalized workflow results into Baserow field updates for status, draft report, error message, and last processed at.\nBASEROW_TABLE_ID comes from environment configuration.\nThe target row id comes dynamically from the current source record id, not from a fixed environment value.\nReplace this section later with an OpenELIS update adapter.",
+    "x": 170,
+    "y": 700,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f610",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Baserow adapter: build PATCH",
+    "func": "var configuredAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\nvar baseUrl = env.get(\"BASEROW_BASE_URL\");\nvar token = env.get(\"BASEROW_TOKEN\");\nvar tableId = env.get(\"BASEROW_TABLE_ID\");\nvar normalizedResult = msg.normalizedWorkflowResult;\nvar sourceRecordId = Number(msg.sourceRecordId);\nvar sourceRecord = msg.sourceRecord || {};\nvar missingVars = [];\nvar updatePayload = {};\nvar allowWriteBack = msg.allowDestinationWriteBack;\n\nfunction pickExistingKey(record, candidates, fallbackKey) {\n    var i;\n    for (i = 0; i < candidates.length; i += 1) {\n        if (Object.prototype.hasOwnProperty.call(record, candidates[i])) {\n            return candidates[i];\n        }\n    }\n    return fallbackKey;\n}\n\nmsg.destinationUpdateAttempted = false;\nmsg.destinationUpdateOk = false;\nmsg.destinationUpdateStatus = null;\nmsg.destinationUpdateMissingConfig = [];\nmsg.destinationUpdateError = \"\";\nmsg.destinationUpdateHttpStatusCode = null;\nmsg.destinationUpdateResponse = null;\nmsg.destinationUpdatePayloadPreview = null;\n\nif (configuredAdapter !== \"baserow_prototype\") {\n    msg.destinationUpdateStatus = \"Skipped - Unsupported Adapter\";\n    msg.destinationUpdateError = \"This prototype update adapter only supports SOURCE_ADAPTER=baserow_prototype. Current value: \" + configuredAdapter;\n    return [null, msg];\n}\n\nif (!normalizedResult || typeof normalizedResult !== \"object\") {\n    msg.destinationUpdateStatus = \"Skipped - Missing Workflow Result\";\n    msg.destinationUpdateError = \"No normalized workflow result is available for destination update translation.\";\n    return [null, msg];\n}\n\nif (msg.sourceReadStatus === \"Direct Input Ready\" && allowWriteBack !== true) {\n    msg.destinationUpdateStatus = \"Skipped - Direct Input Test Mode\";\n    msg.destinationUpdateError = \"Direct-input/sample mode does not write back to Baserow unless allow_write_back=true is provided explicitly.\";\n    return [null, msg];\n}\n\nif (!Number.isInteger(sourceRecordId) || sourceRecordId <= 0) {\n    msg.destinationUpdateStatus = \"Skipped - Missing Source Record Id\";\n    msg.destinationUpdateError = \"No valid numeric sourceRecordId is available for the destination update adapter.\";\n    return [null, msg];\n}\n\nmsg.sourceRecordId = sourceRecordId;\n\nupdatePayload[pickExistingKey(sourceRecord, [\"Status\", \"status\"], \"Status\")] = normalizedResult.workflow_status;\nupdatePayload[pickExistingKey(sourceRecord, [\"Draft report\", \"draft report\", \"Draft Report\"], \"draft report\")] = normalizedResult.draft_payload ? JSON.stringify(normalizedResult.draft_payload, null, 2) : \"\";\nupdatePayload[pickExistingKey(sourceRecord, [\"Error message\", \"error message\", \"Error Message\"], \"error message\")] = normalizedResult.error_message || \"\";\nupdatePayload[pickExistingKey(sourceRecord, [\"Last processed at\", \"last processed at\", \"Last Processed At\"], \"last processed at\")] = normalizedResult.processed_at || new Date().toISOString();\nmsg.destinationUpdatePayloadPreview = updatePayload;\n\nif (!baseUrl) { missingVars.push(\"BASEROW_BASE_URL\"); }\nif (!token) { missingVars.push(\"BASEROW_TOKEN\"); }\nif (!tableId) { missingVars.push(\"BASEROW_TABLE_ID\"); }\n\nif (missingVars.length > 0) {\n    msg.destinationUpdateStatus = \"Skipped - Missing Config\";\n    msg.destinationUpdateMissingConfig = missingVars;\n    msg.destinationUpdateError = \"Missing runtime configuration for Baserow destination update.\";\n    return [null, msg];\n}\n\nmsg.destinationUpdateAttempted = true;\nmsg.method = \"PATCH\";\nmsg.url = baseUrl.replace(/\\/$/, \"\") + \"/api/database/rows/table/\" + tableId + \"/\" + sourceRecordId + \"/?user_field_names=true\";\nmsg.headers = {\n    \"Authorization\": \"Token \" + token,\n    \"Content-Type\": \"application/json\",\n    \"Accept\": \"application/json\"\n};\nmsg.payload = updatePayload;\nreturn [msg, null];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 750,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f611"
+      ],
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f611",
+    "type": "http request",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "PATCH Baserow row",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 750,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f613"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f613",
+    "type": "function",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Build output status",
+    "func": "function hasValue(value) {\n    return value !== undefined && value !== null && String(value).trim() !== \"\";\n}\n\nfunction buildConfigCheck() {\n    var sourceAdapter = env.get(\"SOURCE_ADAPTER\") || \"baserow_prototype\";\n    var baseUrl = env.get(\"BASEROW_BASE_URL\");\n    var token = env.get(\"BASEROW_TOKEN\");\n    var tableId = env.get(\"BASEROW_TABLE_ID\");\n    var configCheck = {\n        source_adapter: sourceAdapter,\n        baserow_base_url_present: hasValue(baseUrl),\n        baserow_table_id_present: hasValue(tableId),\n        baserow_token_present: hasValue(token),\n        missing_config: []\n    };\n    if (!configCheck.baserow_base_url_present) { configCheck.missing_config.push(\"BASEROW_BASE_URL\"); }\n    if (!configCheck.baserow_table_id_present) { configCheck.missing_config.push(\"BASEROW_TABLE_ID\"); }\n    if (!configCheck.baserow_token_present) { configCheck.missing_config.push(\"BASEROW_TOKEN\"); }\n    return configCheck;\n}\n\nvar finalHttpStatusCode = (typeof msg.statusCode === \"number\") ? msg.statusCode : 200;\nvar response;\nvar configCheck = buildConfigCheck();\nvar sourceReadOk = !!msg.sourceReadOk;\nvar sourceReadStatus = msg.sourceReadStatus || (sourceReadOk ? \"Source Ready\" : \"Source Not Ready\");\nvar sourceReadHttpStatus = (typeof msg.sourceReadHttpStatus === \"number\") ? msg.sourceReadHttpStatus : null;\nvar sourceReadResponse = msg.sourceReadResponse || null;\nvar processingOk = false;\nvar processingStatus = null;\nvar processingSkipped = false;\nvar destinationUpdateAttempted = !!msg.destinationUpdateAttempted;\nvar destinationUpdateOk = false;\nvar destinationUpdateStatus = msg.destinationUpdateStatus || null;\nvar destinationUpdatePayloadPreview = msg.destinationUpdatePayloadPreview || null;\nvar destinationUpdateHttpStatus = null;\nvar destinationUpdateResponse = null;\nvar destinationUpdateMissingConfig = msg.destinationUpdateMissingConfig || [];\nvar destinationUpdateError = msg.destinationUpdateError || \"\";\n\nif (msg.processingSummary) {\n    processingOk = !!msg.processingSummary.ok;\n    processingSkipped = !!msg.processingSummary.skipped;\n    processingStatus = msg.processingSummary.status || (processingOk ? \"Draft Generated\" : \"Error\");\n} else if (msg.payload && msg.payload.ok === false) {\n    processingOk = false;\n    processingStatus = \"Not Run\";\n} else {\n    processingOk = finalHttpStatusCode < 400;\n    processingStatus = processingOk ? \"OK\" : \"Error\";\n}\n\nif (destinationUpdateAttempted) {\n    destinationUpdateHttpStatus = finalHttpStatusCode;\n    destinationUpdateResponse = msg.payload;\n    destinationUpdateOk = finalHttpStatusCode < 400;\n    destinationUpdateStatus = destinationUpdateOk ? \"Updated\" : \"Error\";\n    if (!destinationUpdateOk && !destinationUpdateError) {\n        destinationUpdateError = \"Destination update adapter failed.\";\n    }\n} else {\n    destinationUpdateOk = false;\n    if (!destinationUpdateStatus && processingSkipped) {\n        destinationUpdateStatus = \"Skipped - Locked Status\";\n    }\n}\n\nif (msg.payload && msg.payload.ok === false && !msg.processingSummary) {\n    response = {\n        ok: false,\n        overall_status: \"Error\",\n        source_read_ok: sourceReadOk,\n        source_read_status: sourceReadStatus,\n        processing_ok: false,\n        processing_status: processingStatus,\n        destination_update_attempted: false,\n        destination_update_ok: false,\n        destination_update_status: destinationUpdateStatus,\n        destination_update_payload_preview: destinationUpdatePayloadPreview,\n        destination_update_http_status: null,\n        destination_update_response: null,\n        config_check_result: configCheck,\n        source_read_result: {\n            ok: sourceReadOk,\n            status: sourceReadStatus,\n            http_status: sourceReadHttpStatus,\n            response: sourceReadResponse\n        },\n        processing_result: null,\n        destination_update_result: {\n            attempted: false,\n            ok: false,\n            status: destinationUpdateStatus,\n            payload_preview: destinationUpdatePayloadPreview\n        },\n        final_result: {\n            ok: false,\n            overall_status: \"Error\",\n            final_http_status_code: finalHttpStatusCode\n        },\n        error: msg.payload.error || \"Request failed before processing completed.\"\n    };\n    if (destinationUpdateMissingConfig.length > 0) {\n        response.destination_update_result.missing_config = destinationUpdateMissingConfig;\n    }\n    if (destinationUpdateError) {\n        response.destination_update_result.error = destinationUpdateError;\n    }\n} else {\n    response = {\n        ok: processingOk,\n        overall_status: processingStatus,\n        source_read_ok: sourceReadOk,\n        source_read_status: sourceReadStatus,\n        processing_ok: processingOk,\n        processing_status: processingStatus,\n        destination_update_attempted: destinationUpdateAttempted,\n        destination_update_ok: destinationUpdateOk,\n        destination_update_status: destinationUpdateStatus,\n        destination_update_payload_preview: destinationUpdatePayloadPreview,\n        destination_update_http_status: destinationUpdateHttpStatus,\n        destination_update_response: destinationUpdateResponse,\n        config_check_result: configCheck,\n        source_read_result: {\n            ok: sourceReadOk,\n            status: sourceReadStatus,\n            http_status: sourceReadHttpStatus,\n            response: sourceReadResponse\n        },\n        processing_result: msg.processingSummary ? {\n            processing_ok: processingOk,\n            skipped: processingSkipped,\n            status: processingStatus,\n            source_adapter: msg.sourceAdapter || null,\n            source_record_id: msg.sourceRecordId || null,\n            normalized_case: msg.normalizedCase || null,\n            normalized_workflow_result: msg.normalizedWorkflowResult || null,\n            summary: msg.processingSummary\n        } : null,\n        destination_update_result: {\n            attempted: destinationUpdateAttempted,\n            ok: destinationUpdateOk,\n            status: destinationUpdateStatus,\n            payload_preview: destinationUpdatePayloadPreview,\n            http_status: destinationUpdateHttpStatus,\n            response: destinationUpdateResponse\n        },\n        final_result: {\n            ok: processingOk,\n            overall_status: processingStatus,\n            final_http_status_code: finalHttpStatusCode\n        }\n    };\n    if (!destinationUpdateAttempted) {\n        response.destination_update_http_status = null;\n        response.destination_update_response = null;\n        delete response.destination_update_result.http_status;\n        delete response.destination_update_result.response;\n    }\n    if (destinationUpdateMissingConfig.length > 0) {\n        response.destination_update_result.missing_config = destinationUpdateMissingConfig;\n    }\n    if (destinationUpdateError) {\n        response.destination_update_result.error = destinationUpdateError;\n    }\n}\n\nmsg.statusCode = finalHttpStatusCode;\nmsg.payload = response;\n\nif (msg.res) {\n    return [msg, null];\n}\nreturn [null, msg];",
+    "outputs": 2,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 950,
+    "y": 730,
+    "wires": [
+      [
+        "a0a1b2c3d4e5f612"
+      ],
+      [
+        "a0a1b2c3d4e5f615"
+      ]
+    ]
+  },
+  {
+    "id": "a0a1b2c3d4e5f612",
+    "type": "http response",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "HTTP response",
+    "statusCode": "",
+    "headers": {},
+    "x": 1170,
+    "y": 700,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f615",
+    "type": "debug",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Flow result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload.overall_status",
+    "statusType": "msg",
+    "x": 1160,
+    "y": 770,
+    "wires": []
+  },
+  {
+    "id": "a0a1b2c3d4e5f619",
+    "type": "debug",
+    "z": "f0a1b2c3d4e5f601",
+    "name": "Config check result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload.ok",
+    "statusType": "msg",
+    "x": 670,
+    "y": 280,
+    "wires": []
+  }
+]
