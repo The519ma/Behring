@@ -64,7 +64,6 @@ jobs:
   legacy-web:
     name: Build legacy web fallback
     runs-on: ubuntu-latest
-    needs: build
     steps:
       - uses: actions/checkout@v4
 
