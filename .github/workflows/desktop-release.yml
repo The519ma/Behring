@@ -21,7 +21,7 @@ jobs:
             os: windows-latest
             script: npm run dist:win
           - platform: mac
-            os: macos-13
+            os: macos-latest
             script: npm run dist:mac
           - platform: linux
             os: ubuntu-latest
