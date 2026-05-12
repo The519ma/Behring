@@ -45,6 +45,13 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: ${{ matrix.script }}
 
+      - name: Package Windows installer zip
+        if: matrix.platform == 'windows'
+        working-directory: Behring/apps/desktop/dist
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "Behring Desktop Setup 0.2.0.exe" -DestinationPath "Behring.Desktop.Windows.0.2.0.zip" -Force
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
