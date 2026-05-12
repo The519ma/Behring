@@ -1,0 +1,22 @@
+window.BEHRING_WORKBENCH_CONFIG = {
+  noderedUrl: "http://217.15.167.222",
+  noderedManagedLocally: false,
+  desktopShell: true,
+  requireWorkbenchAuth: true,
+  baserowUrl: "http://217.15.167.222/baserow",
+  baserowFormUrl: "http://217.15.167.222/baserow/form/CpHtNpG4YD6dTtkP7RcPYndD4LrhqqLV5pU7CRvWpzE",
+  fullStartCommandUrl: "",
+  reconcileCommandUrl: "",
+  baserowVm: "behringihcls2@192.168.64.3",
+  keycloakUrl: "http://217.15.167.222/auth",
+  keycloakRealm: "behring",
+  keycloakClientId: "behring-workbench",
+  keycloakClientSecret: "",
+  labelPrintAgentUrl: "",
+  labelPrinterName: "Brother_QL_800",
+  softwareHubUrl: "http://217.15.167.222/software",
+  updateFeedUrl: "http://217.15.167.222/software/desktop-updates",
+  nodeRedEnv: "production",
+  sourceAdapter: "baserow_prototype",
+  destinationAdapter: "baserow_prototype"
+};

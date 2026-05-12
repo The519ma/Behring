@@ -57,11 +57,23 @@ That means the desktop app can report "up to date" while still missing the newes
 Durable fix:
 
 - publish signed desktop releases for Windows, macOS, and Linux
-- configure the packaged desktop app's update provider to a real feed, preferably GitHub Releases or a VPS path such as `/desktop-updates`
+- configure the packaged desktop app's update provider to a real feed. The current release builder points to the VPS-proxied feed at `/software/desktop-updates`
 - ensure the release feed contains the correct `latest.yml` / platform metadata and installer artifacts
 - keep the browser fallback at `/software` as the immediate cross-platform route
 
 Until that is done, users should use the VPS browser routes directly or install a freshly built desktop package. The desktop app's "up to date" message should not be treated as confirmation that the VPS runtime changes are packaged locally.
+
+## Updateable Desktop Installer Builder
+
+The repo now contains an Electron desktop builder at `apps/desktop`. Pushing a tag like `desktop-v0.2.0` runs `.github/workflows/desktop-release.yml`, which builds Windows, macOS, Linux, and legacy browser fallback packages and attaches them to the GitHub release.
+
+The packaged app update feed is:
+
+```text
+http://217.15.167.222/software/desktop-updates
+```
+
+The VPS route redirects update metadata and installer asset requests to the matching GitHub release asset, so the VPS remains the public software hub while GitHub stores the downloadable binaries.
 
 ## Label / P-touch Strategy
 

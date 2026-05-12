@@ -1,0 +1,82 @@
+name: Desktop release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            script: npm run dist:win
+          - platform: mac
+            os: macos-13
+            script: npm run dist:mac
+          - platform: linux
+            os: ubuntu-latest
+            script: npm run dist:linux
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install desktop dependencies
+        working-directory: Behring/apps/desktop
+        run: npm install
+
+      - name: Build desktop package
+        working-directory: Behring/apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: ${{ matrix.script }}
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Behring Desktop ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            Behring/apps/desktop/dist/*.exe
+            Behring/apps/desktop/dist/*.blockmap
+            Behring/apps/desktop/dist/*.yml
+            Behring/apps/desktop/dist/*.dmg
+            Behring/apps/desktop/dist/*.zip
+            Behring/apps/desktop/dist/*.AppImage
+            Behring/apps/desktop/dist/*.deb
+
+  legacy-web:
+    name: Build legacy web fallback
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package legacy web workbench
+        run: |
+          mkdir -p release/Behring-Desktop-legacy-web-workbench
+          cp -R Behring/apps/desktop/workbench/. release/Behring-Desktop-legacy-web-workbench/
+          cd release
+          zip -r Behring-Desktop-legacy-web-workbench.zip Behring-Desktop-legacy-web-workbench
+
+      - name: Upload legacy release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: release/Behring-Desktop-legacy-web-workbench.zip

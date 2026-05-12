@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Behring Intranet</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./runtime-config.js"></script>
+  <script>
+    (function () {
+      var c = window.BEHRING_WORKBENCH_CONFIG || {};
+      var needAuth =
+        c.requireWorkbenchAuth === true ||
+        (c.desktopShell === true && c.requireWorkbenchAuth !== false);
+      if (!needAuth) {
+        document.documentElement.classList.add("behring-authenticated");
+      }
+    })();
+  </script>
+</head>
+<body>
+  <button id="help-toggle" class="help-toggle" type="button" aria-pressed="false">Show help tips</button>
+  <div id="auth-gate" class="auth-gate" role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
+    <div class="auth-card">
+      <h1 id="auth-gate-title">Sign in to Behring</h1>
+      <p class="auth-lead muted">Employees use Keycloak. Lab administrators use the workbench admin account from <code>config/env.local</code> (Behring Desktop only).</p>
+      <p class="auth-hint muted" id="auth-config-hint"></p>
+      <form id="auth-gate-form" class="auth-form" autocomplete="on">
+        <fieldset class="auth-kind" id="auth-kind-fieldset">
+          <legend class="sr-only">Account type</legend>
+          <label class="auth-radio" data-require="keycloak"><input type="radio" name="auth-kind" value="employee" checked> Employee (Keycloak)</label>
+          <label class="auth-radio"><input type="radio" name="auth-kind" value="admin"> Administrator (workbench)</label>
+        </fieldset>
+        <label class="auth-field">
+          <span>User ID</span>
+          <input id="auth-username" name="username" type="text" required autocomplete="username">
+        </label>
+        <label class="auth-field">
+          <span>Password</span>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password">
+        </label>
+        <p class="muted auth-inline-note" data-require="keycloak">For first-time staff sign-in, enter the username only and press Enter to create a password.</p>
+        <p class="auth-error" id="auth-error" role="alert"></p>
+        <button type="submit" class="action action-primary auth-submit" id="auth-submit">Sign in</button>
+      </form>
+      <div class="auth-setup-card" id="auth-password-setup" hidden>
+        <h2>Create your password</h2>
+        <p class="muted auth-register-note" id="auth-password-setup-note"></p>
+        <form id="auth-password-setup-form" class="auth-form" autocomplete="off">
+          <label class="auth-field">
+            <span>New password</span>
+            <input id="setup-password" type="password" required autocomplete="new-password">
+          </label>
+          <label class="auth-field">
+            <span>Confirm new password</span>
+            <input id="setup-password-confirm" type="password" required autocomplete="new-password">
+          </label>
+          <p class="auth-error" id="auth-password-setup-error" role="alert"></p>
+          <div class="form-actions">
+            <button type="submit" class="action action-secondary auth-submit" id="auth-password-setup-submit">Save password</button>
+            <button type="button" class="action action-secondary auth-submit" id="auth-password-setup-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-topline">
+        <span class="eyebrow">Behring Office Intranet</span>
+        <nav class="section-nav" aria-label="Workbench sections">
+          <a href="#common">Common</a>
+          <a href="#pathologist">Pathologist</a>
+          <a href="#technician">Technician</a>
+          <a href="#audit">Audit</a>
+          <a href="#access">Access</a>
+          <a href="#software">Software</a>
+        </nav>
+      </div>
+      <h1>Behring Lab Intranet</h1>
+      <p class="lead help-copy">Start with the lab itself: new cases, case review, labels, reporting, bench progress, and supplies. Software access sits at the bottom when you need it.</p>
+      <div class="hero-summary help-copy-block" id="hero-summary"></div>
+      <div class="actions" id="hero-actions"></div>
+    </section>
+
+    <section class="section-stack">
+      <section class="section-block" id="common">
+        <div class="section-heading">
+          <span class="section-kicker">Common</span>
+          <h2>Main Workbench</h2>
+          <p class="help-copy">The common homepage keeps the shared lab tasks together: new cases, case search, labels, reports, and supplies.</p>
+        </div>
+        <article class="card card-highlight">
+          <h3>Case Search</h3>
+          <p class="muted help-copy">Enter a LAB number, compact barcode value, or other case barcode and open the progress-first workbench immediately.</p>
+          <form id="case-search-form" class="case-search-form">
+            <label class="case-search-field">
+              <span>LAB number or barcode</span>
+              <input id="case-search-input" name="case-search" type="text" placeholder="LAB-1997-MVARS or 1997-MVARS" autocomplete="off">
+            </label>
+            <div class="form-actions">
+              <button class="action action-primary" id="case-search-submit" type="submit">Open Progress</button>
+              <button class="action action-secondary" id="case-search-clear" type="button">Clear</button>
+            </div>
+          </form>
+          <div class="status-note" id="case-search-status"></div>
+          <div class="case-search-result" id="case-search-result"></div>
+        </article>
+        <div class="grid">
+          <article class="card card-highlight">
+            <h3>Daily Lab Actions</h3>
+            <p class="muted help-copy">Use these for the most common office and bench tasks.</p>
+            <div class="detail-list" id="common-actions"></div>
+          </article>
+
+          <article class="card">
+            <h3>Shared Case Links</h3>
+            <p class="muted help-copy">Open the current reference case, patient view, and label launcher.</p>
+            <div class="detail-list" id="common-links"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block" id="pathologist">
+        <div class="section-heading">
+          <span class="section-kicker">Pathologist</span>
+          <h2>Pathologist Workbench</h2>
+          <p class="help-copy">Keep reporting, crosscheck, final print, completed reports, and signature-ready work together in one focused zone.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Reporting Flow</h3>
+            <div class="detail-list" id="pathologist-links"></div>
+          </article>
+
+          <article class="card">
+            <h3>Reference Case</h3>
+            <div class="detail-list" id="reference-cases"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block" id="technician">
+        <div class="section-heading">
+          <span class="section-kicker">Technician</span>
+          <h2>Technician Workbench</h2>
+          <p class="help-copy">Keep tray intake, scan handoff, bench progress, supplies, and label handling together for the lab team.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Bench Routes</h3>
+            <div class="detail-list" id="technician-links"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block" id="audit">
+        <div class="section-heading">
+          <span class="section-kicker">Audit</span>
+          <h2>Audit Workbench</h2>
+          <p class="help-copy">Filter cases by demographics, report state, and report-completion dates, then review or export a CSV list.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Audit And Export</h3>
+            <div class="detail-list" id="audit-links"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block" id="access">
+        <div class="section-heading">
+          <span class="section-kicker">Access</span>
+          <h2>Identity, Provisioning, And Future Credentials</h2>
+          <p class="help-copy">Use this area to define staff IDs and access records so the same identity works across the Behring desktop, the mobile app, and future badge tools.</p>
+        </div>
+        <article class="card" id="access-admin-only-note">
+          <h3>Administrator Access Required</h3>
+          <p class="muted">User provisioning and the access registry are only available after signing in with the Administrator (workbench) account.</p>
+        </article>
+        <div class="grid grid-access">
+          <article class="card">
+            <h3>Staff Access</h3>
+            <div class="detail-list" id="auth-stack"></div>
+          </article>
+
+          <article class="card" id="access-provisioning-panel" hidden>
+            <h3>User Access Provision</h3>
+            <p class="muted help-copy">Provision a universal employee ID now so the same identity can later feed lab login, the iOS app, and RFID keycards.</p>
+            <form id="employee-form" class="form-grid">
+              <label>
+                <span>Full name</span>
+                <input name="fullName" type="text" required>
+              </label>
+              <label>
+                <span>Role</span>
+                <select name="role" required>
+                  <option value="pathologist">Pathologist</option>
+                  <option value="lab_technician">Lab technician</option>
+                  <option value="front_office">Front office</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+              <label>
+                <span>Personal or employee email</span>
+                <input name="email" type="email" placeholder="name@example.com">
+              </label>
+              <label>
+                <span>Phone</span>
+                <input name="phone" type="text" placeholder="+91">
+              </label>
+              <label>
+                <span>Official lab email</span>
+                <input name="officialEmail" type="email" value="behringihcls@gmail.com">
+              </label>
+              <label>
+                <span>Future RFID / keycard note</span>
+                <input name="rfidNote" type="text" placeholder="Card slot, badge note, or leave blank">
+              </label>
+            </form>
+            <div class="form-actions">
+              <button class="action action-primary" id="provision-user" type="button">Provision Employee ID</button>
+              <button class="action action-secondary" id="clear-provisioning" type="button">Clear Registry</button>
+            </div>
+            <div class="status-note" id="provision-status"></div>
+          </article>
+        </div>
+
+        <article class="card" id="access-registry-panel" hidden>
+          <h3>Provisioned Access Registry</h3>
+          <p class="muted help-copy">This access register is stored on the Behring VPS and stays aligned with the server-side Keycloak user registry.</p>
+          <div class="detail-list" id="employee-registry"></div>
+        </article>
+      </section>
+
+      <section class="section-block" id="software">
+        <div class="section-heading">
+          <span class="section-kicker">Software</span>
+          <h2>Software Access</h2>
+          <p class="help-copy">Use these links only when you need to open the underlying systems directly.</p>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <h3>Direct System Links</h3>
+            <div class="service-list" id="software-services"></div>
+          </article>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script src="./auth-gate.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
