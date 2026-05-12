@@ -40,6 +40,29 @@ The JSON manifest at `/software/manifest` defines the expected release artifact 
 - `Behring-Desktop-linux-x64.AppImage`
 - `Behring-Desktop-legacy-web-workbench.zip`
 
+## Desktop Auto-Update Gap
+
+The installed Windows desktop shell is separate from the VPS runtime. A GitHub `main` push updates the source repo and a Node-RED deploy updates the VPS, but neither action automatically creates a desktop installer update.
+
+On the Windows workstation inspected on 2026-05-12, the installed Electron updater config was:
+
+```yaml
+provider: generic
+url: https://replace-me.invalid/desktop-updates
+updaterCacheDirName: behring-desktop-shell-updater
+```
+
+That means the desktop app can report "up to date" while still missing the newest workbench links, because it is checking a placeholder update feed rather than a real VPS or GitHub Releases feed.
+
+Durable fix:
+
+- publish signed desktop releases for Windows, macOS, and Linux
+- configure the packaged desktop app's update provider to a real feed, preferably GitHub Releases or a VPS path such as `/desktop-updates`
+- ensure the release feed contains the correct `latest.yml` / platform metadata and installer artifacts
+- keep the browser fallback at `/software` as the immediate cross-platform route
+
+Until that is done, users should use the VPS browser routes directly or install a freshly built desktop package. The desktop app's "up to date" message should not be treated as confirmation that the VPS runtime changes are packaged locally.
+
 ## Label / P-touch Strategy
 
 The live label route no longer depends on a workstation-local helper at `127.0.0.1`. Instead, `/labels/:labelType/:caseId` serves a VPS-hosted label page that:
