@@ -1,6 +1,6 @@
 {
   "name": "behring-desktop",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Behring desktop shell for the VPS-hosted lab workbench",
   "main": "src/main.js",
   "homepage": "http://217.15.167.222/software",
@@ -39,6 +39,14 @@
       {
         "from": "workbench",
         "to": "workbench"
+      },
+      {
+        "from": "ptouch-templates",
+        "to": "ptouch-templates"
+      },
+      {
+        "from": "ptouch-data",
+        "to": "ptouch-data"
       }
     ],
     "publish": [
@@ -62,7 +70,8 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "include": "installer.nsh"
     },
     "mac": {
       "category": "public.app-category.medical",
