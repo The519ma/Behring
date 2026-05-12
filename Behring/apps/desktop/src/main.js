@@ -1,9 +1,14 @@
 const path = require("path");
+const fs = require("fs");
 const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const { autoUpdater } = require("electron-updater");
 
 const UPDATE_FEED_URL = "http://217.15.167.222/software/desktop-updates";
 const WORKBENCH_INDEX = path.join(__dirname, "..", "workbench", "index.html");
+const PTOUCH_TEMPLATE_NAMES = {
+  barcode: "barcode-label.lbx",
+  quad: "quad-label.lbx"
+};
 
 let mainWindow;
 
@@ -45,6 +50,116 @@ function configureUpdater() {
 function openVpsPath(route) {
   const cleanRoute = String(route || "/software").startsWith("/") ? route : "/software";
   shell.openExternal(`http://217.15.167.222${cleanRoute}`);
+}
+
+function csvEscape(value) {
+  return `"${String(value == null ? "" : value).replace(/"/g, '""')}"`;
+}
+
+function sanitize(value, fallback = "") {
+  const text = String(value == null ? "" : value).trim();
+  return text || fallback;
+}
+
+function ptouchBaseDir() {
+  return path.join(app.getPath("documents"), "Behring P-touch Templates");
+}
+
+function sourceResourceDir(name) {
+  const packaged = path.join(process.resourcesPath || "", name);
+  if (fs.existsSync(packaged)) {
+    return packaged;
+  }
+  return path.join(__dirname, "..", name);
+}
+
+function ensurePtouchFiles() {
+  const baseDir = ptouchBaseDir();
+  const currentDir = path.join(baseDir, "current");
+  const archiveDir = path.join(baseDir, "archive");
+  fs.mkdirSync(currentDir, { recursive: true });
+  fs.mkdirSync(archiveDir, { recursive: true });
+
+  const templateDir = sourceResourceDir("ptouch-templates");
+  Object.values(PTOUCH_TEMPLATE_NAMES).forEach((name) => {
+    const target = path.join(baseDir, name);
+    const source = path.join(templateDir, name);
+    if (fs.existsSync(source) && !fs.existsSync(target)) {
+      fs.copyFileSync(source, target);
+    }
+  });
+
+  const readmeSource = path.join(templateDir, "README.txt");
+  const readmeTarget = path.join(baseDir, "README.txt");
+  if (fs.existsSync(readmeSource) && !fs.existsSync(readmeTarget)) {
+    fs.copyFileSync(readmeSource, readmeTarget);
+  }
+
+  return { baseDir, currentDir, archiveDir };
+}
+
+function buildBarcodeCsv(data) {
+  const caseId = sanitize(data.caseId, "LAB-UNSET");
+  return [
+    "barcode_value,label_kind",
+    [caseId, "barcode"].map(csvEscape).join(","),
+    ["LAB-PLACEHOLDER", "barcode"].map(csvEscape).join(",")
+  ].join("\n") + "\n";
+}
+
+function buildQuadCsv(data) {
+  const firstName = sanitize(data.firstName, "Unknown");
+  const age = sanitize(data.ageDisplay);
+  const gender = sanitize(data.genderShort);
+  const labShort = sanitize(data.labNumberShort, sanitize(data.caseId, "LAB-UNSET").replace(/^LAB-/i, ""));
+  const compactFirst = firstName.toUpperCase().slice(0, 3);
+  const line1 = [firstName, age, gender].filter(Boolean).join("/") || firstName;
+  const compact = [compactFirst, gender, age].filter(Boolean).join("/") || line1;
+  return [
+    "quad_line_1,quad_line_2,quad_compact",
+    [line1, labShort, compact].map(csvEscape).join(","),
+    ["PLACEHOLDER/0/X", "0000-PLACE", "PLA/X/0"].map(csvEscape).join(",")
+  ].join("\n") + "\n";
+}
+
+async function openPtouchLabel(_event, request) {
+  const kind = String((request && request.kind) || "barcode").toLowerCase() === "quad" ? "quad" : "barcode";
+  const data = (request && request.data) || {};
+  const caseId = sanitize(data.caseId || (request && request.caseId), "LAB-UNSET");
+  const paths = ensurePtouchFiles();
+  const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+  const barcodeCsv = buildBarcodeCsv({ ...data, caseId });
+  const quadCsv = buildQuadCsv({ ...data, caseId });
+  const barcodeCurrent = path.join(paths.currentDir, "barcode-label.csv");
+  const quadCurrent = path.join(paths.currentDir, "quad-label.csv");
+  const barcodeArchive = path.join(paths.archiveDir, `${caseId}-barcode-${timestamp}.csv`);
+  const quadArchive = path.join(paths.archiveDir, `${caseId}-quad-${timestamp}.csv`);
+
+  fs.writeFileSync(barcodeCurrent, barcodeCsv, "utf8");
+  fs.writeFileSync(quadCurrent, quadCsv, "utf8");
+  fs.writeFileSync(barcodeArchive, barcodeCsv, "utf8");
+  fs.writeFileSync(quadArchive, quadCsv, "utf8");
+
+  const template = path.join(paths.baseDir, PTOUCH_TEMPLATE_NAMES[kind]);
+  if (!fs.existsSync(template)) {
+    shell.showItemInFolder(paths.baseDir);
+    return { ok: false, error: `Missing ${PTOUCH_TEMPLATE_NAMES[kind]}`, paths };
+  }
+
+  const error = await shell.openPath(template);
+  return {
+    ok: !error,
+    error: error || "",
+    kind,
+    template,
+    paths: {
+      baseDir: paths.baseDir,
+      barcodeCurrent,
+      quadCurrent,
+      barcodeArchive,
+      quadArchive
+    }
+  };
 }
 
 function buildMenu() {
@@ -104,3 +219,4 @@ app.on("window-all-closed", () => {
 
 ipcMain.handle("behring:get-version", () => app.getVersion());
 ipcMain.handle("behring:check-updates", () => autoUpdater.checkForUpdatesAndNotify());
+ipcMain.handle("behring:open-ptouch-label", openPtouchLabel);

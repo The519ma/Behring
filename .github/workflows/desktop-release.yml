@@ -50,20 +50,20 @@ jobs:
         working-directory: Behring/apps/desktop/dist
         shell: pwsh
         run: |
-          Copy-Item "Behring Desktop Setup 0.2.3.exe" "Behring.Desktop.Windows10.x64.Setup.0.2.3.exe" -Force
-          Compress-Archive -Path "Behring Desktop Setup 0.2.3.exe" -DestinationPath "Behring.Desktop.Windows.0.2.3.zip" -Force
-          Compress-Archive -Path "Behring.Desktop.Windows10.x64.Setup.0.2.3.exe" -DestinationPath "Behring.Desktop.Windows10.x64.0.2.3.zip" -Force
+          Copy-Item "Behring Desktop Setup 0.2.4.exe" "Behring.Desktop.Windows10.x64.Setup.0.2.4.exe" -Force
+          Compress-Archive -Path "Behring Desktop Setup 0.2.4.exe" -DestinationPath "Behring.Desktop.Windows.0.2.4.zip" -Force
+          Compress-Archive -Path "Behring.Desktop.Windows10.x64.Setup.0.2.4.exe" -DestinationPath "Behring.Desktop.Windows10.x64.0.2.4.zip" -Force
 
       - name: Package P-touch templates
         if: matrix.platform == 'windows'
         working-directory: Behring/apps/desktop
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force "dist/Behring.P-touch.Label.Templates.0.2.3/current" | Out-Null
-          Copy-Item "ptouch-templates/*.lbx" "dist/Behring.P-touch.Label.Templates.0.2.3/" -Force
-          Copy-Item "ptouch-templates/README.txt" "dist/Behring.P-touch.Label.Templates.0.2.3/" -Force
-          Copy-Item "ptouch-data/current/*.csv" "dist/Behring.P-touch.Label.Templates.0.2.3/current/" -Force
-          Compress-Archive -Path "dist/Behring.P-touch.Label.Templates.0.2.3/*" -DestinationPath "dist/Behring.P-touch.Label.Templates.0.2.3.zip" -Force
+          New-Item -ItemType Directory -Force "dist/Behring.P-touch.Label.Templates.0.2.4/current" | Out-Null
+          Copy-Item "ptouch-templates/*.lbx" "dist/Behring.P-touch.Label.Templates.0.2.4/" -Force
+          Copy-Item "ptouch-templates/README.txt" "dist/Behring.P-touch.Label.Templates.0.2.4/" -Force
+          Copy-Item "ptouch-data/current/*.csv" "dist/Behring.P-touch.Label.Templates.0.2.4/current/" -Force
+          Compress-Archive -Path "dist/Behring.P-touch.Label.Templates.0.2.4/*" -DestinationPath "dist/Behring.P-touch.Label.Templates.0.2.4.zip" -Force
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
