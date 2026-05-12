@@ -1,5 +1,7 @@
 const path = require("path");
 const fs = require("fs");
+const http = require("http");
+const https = require("https");
 const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const { autoUpdater } = require("electron-updater");
 
@@ -50,6 +52,125 @@ function configureUpdater() {
 function openVpsPath(route) {
   const cleanRoute = String(route || "/software").startsWith("/") ? route : "/software";
   shell.openExternal(`http://217.15.167.222${cleanRoute}`);
+}
+
+function requestText(url, options = {}, body = "") {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const transport = parsed.protocol === "https:" ? https : http;
+    const request = transport.request(parsed, {
+      method: options.method || "GET",
+      headers: options.headers || {}
+    }, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => {
+        resolve({
+          ok: response.statusCode >= 200 && response.statusCode < 300,
+          statusCode: response.statusCode,
+          body: Buffer.concat(chunks).toString("utf8")
+        });
+      });
+    });
+    request.on("error", reject);
+    request.setTimeout(30000, () => {
+      request.destroy(new Error("Request timed out."));
+    });
+    if (body) {
+      request.write(body);
+    }
+    request.end();
+  });
+}
+
+function parseJson(text) {
+  if (!text) {
+    return {};
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return { ok: false, error: text.slice(0, 300) };
+  }
+}
+
+async function postJson(url, payload) {
+  const body = JSON.stringify(payload || {});
+  const response = await requestText(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Content-Length": Buffer.byteLength(body)
+    }
+  }, body);
+  const data = parseJson(response.body);
+  if (!response.ok || data.ok === false) {
+    return { ok: false, error: data.error || `HTTP ${response.statusCode}` };
+  }
+  return data;
+}
+
+async function keycloakLogin(_event, request) {
+  const baseUrl = String(request && request.baseUrl || "").replace(/\/$/, "");
+  const realm = String(request && request.realm || "").trim();
+  const clientId = String(request && request.clientId || "").trim();
+  const clientSecret = String(request && request.clientSecret || "").trim();
+  const username = String(request && request.username || "").trim();
+  const password = String(request && request.password || "");
+
+  if (!baseUrl || !realm || !clientId || !username || !password) {
+    return { ok: false, error: "Missing Keycloak sign-in details." };
+  }
+
+  const form = new URLSearchParams();
+  form.set("grant_type", "password");
+  form.set("client_id", clientId);
+  form.set("username", username);
+  form.set("password", password);
+  if (clientSecret) {
+    form.set("client_secret", clientSecret);
+  }
+
+  try {
+    const body = form.toString();
+    const tokenUrl = `${baseUrl}/realms/${encodeURIComponent(realm)}/protocol/openid-connect/token`;
+    const response = await requestText(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "Content-Length": Buffer.byteLength(body)
+      }
+    }, body);
+    const data = parseJson(response.body);
+    if (!response.ok || data.error) {
+      return {
+        ok: false,
+        error: data.error_description || data.error || `Keycloak HTTP ${response.statusCode}`
+      };
+    }
+    return {
+      ok: true,
+      access_token: data.access_token || "",
+      refresh_token: data.refresh_token || "",
+      expires_in: data.expires_in || 300,
+      token_type: data.token_type || "Bearer"
+    };
+  } catch (error) {
+    return { ok: false, error: String(error && error.message ? error.message : error) };
+  }
+}
+
+async function workbenchAdminLogin(_event, request) {
+  try {
+    return await postJson("http://217.15.167.222/identity/admin/login", {
+      username: request && request.username,
+      password: request && request.password
+    });
+  } catch (error) {
+    return { ok: false, error: String(error && error.message ? error.message : error) };
+  }
 }
 
 function csvEscape(value) {
@@ -219,4 +340,6 @@ app.on("window-all-closed", () => {
 
 ipcMain.handle("behring:get-version", () => app.getVersion());
 ipcMain.handle("behring:check-updates", () => autoUpdater.checkForUpdatesAndNotify());
+ipcMain.handle("behring:keycloak-login", keycloakLogin);
+ipcMain.handle("behring:workbench-admin-login", workbenchAdminLogin);
 ipcMain.handle("behring:open-ptouch-label", openPtouchLabel);
