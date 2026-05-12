@@ -1,6 +1,6 @@
 {
   "name": "behring-desktop",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Behring desktop shell for the VPS-hosted lab workbench",
   "main": "src/main.js",
   "homepage": "http://217.15.167.222/software",

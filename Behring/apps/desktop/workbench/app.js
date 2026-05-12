@@ -370,21 +370,26 @@
   heroSummary.appendChild(createSummary("Stock room", "Supplies workbench", "Handle supply intake, stock levels, and bench replenishment as its own workspace."));
 
   const heroActions = document.getElementById("hero-actions");
-  try {
-    if (window.sessionStorage.getItem("behring.session")) {
-      const signOut = document.createElement("button");
-      signOut.type = "button";
-      signOut.className = "action action-secondary";
-      signOut.textContent = "Sign out";
-      signOut.addEventListener("click", function () {
-        try {
-          window.sessionStorage.removeItem("behring.session");
-        } catch (error) {}
-        window.location.reload();
-      });
-      heroActions.appendChild(signOut);
+  const signOut = document.createElement("button");
+  signOut.type = "button";
+  signOut.className = "action action-secondary";
+  signOut.textContent = "Sign out";
+  signOut.hidden = true;
+  signOut.addEventListener("click", function () {
+    try {
+      window.sessionStorage.removeItem("behring.session");
+    } catch (error) {}
+    window.location.reload();
+  });
+  heroActions.appendChild(signOut);
+  function syncSignOut() {
+    try {
+      signOut.hidden = !window.sessionStorage.getItem("behring.session");
+    } catch (error) {
+      signOut.hidden = true;
     }
-  } catch (error) {}
+  }
+  syncSignOut();
   heroActions.appendChild(createAction("Open New Cases", `${config.noderedUrl}/queue/new-cases/view`, true));
   heroActions.appendChild(createAction("Open Pathologist Workbench", `${config.noderedUrl}/reporting/completed-reports/view#reports-to-sign`, false, true));
   heroActions.appendChild(createAction("Open Technician Workbench", `${config.noderedUrl}/lab/tech-portal`, false, true));
@@ -530,6 +535,7 @@
     document.getElementById("provision-status").textContent = "Provisioned access registry refreshed from the VPS.";
   });
   window.addEventListener("behring:session-changed", function () {
+    syncSignOut();
     setProvisioningVisibility();
     renderRegistry();
   });

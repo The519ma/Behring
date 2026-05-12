@@ -9,9 +9,7 @@
   <script>
     (function () {
       var c = window.BEHRING_WORKBENCH_CONFIG || {};
-      var needAuth =
-        c.requireWorkbenchAuth === true ||
-        (c.desktopShell === true && c.requireWorkbenchAuth !== false);
+      var needAuth = c.requireWorkbenchAuth !== false;
       if (!needAuth) {
         document.documentElement.classList.add("behring-authenticated");
       }

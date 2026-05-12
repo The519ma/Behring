@@ -50,7 +50,7 @@ jobs:
         working-directory: Behring/apps/desktop/dist
         shell: pwsh
         run: |
-          Compress-Archive -Path "Behring Desktop Setup 0.2.0.exe" -DestinationPath "Behring.Desktop.Windows.0.2.0.zip" -Force
+          Compress-Archive -Path "Behring Desktop Setup 0.2.1.exe" -DestinationPath "Behring.Desktop.Windows.0.2.1.zip" -Force
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2

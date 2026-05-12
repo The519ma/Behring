@@ -1,9 +1,7 @@
 (function () {
   const SESSION_KEY = "behring.session";
   const cfg = window.BEHRING_WORKBENCH_CONFIG || {};
-  const requireAuth =
-    cfg.requireWorkbenchAuth === true ||
-    (cfg.desktopShell === true && cfg.requireWorkbenchAuth !== false);
+  const requireAuth = cfg.requireWorkbenchAuth !== false;
   const keycloakUrl = String(cfg.keycloakUrl || "").trim();
   const keycloakRealm = String(cfg.keycloakRealm || "").trim();
   const keycloakClientId = String(cfg.keycloakClientId || "").trim();
